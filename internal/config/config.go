@@ -1,6 +1,12 @@
 package config
 
-import "time"
+import (
+	"log"
+	"os"
+	"time"
+
+	"github.com/ilyakaznacheev/cleanenv"
+)
 
 type Config struct {
 	Env string `yaml:"env"`
@@ -20,4 +26,19 @@ type HTTPServer struct {
 	Address string `yaml:"address"`
 	Timeout time.Duration `yaml:"timeout"`
 	Idle_Timeout time.Duration `yaml:"idle_timeout"`
+}
+
+func LoadConfig() *Config {
+	configPath := os.Getenv("./config.yaml")
+	if configPath == "" {
+		log.Fatalf("config path is not set or config file does not exist")
+	}
+
+	var cfg Config
+
+	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
+		log.Fatalf("Cannot read config: %v", err)
+	}
+
+	return &cfg
 }
