@@ -2,7 +2,6 @@ package config
 
 import (
 	"log"
-	"os"
 	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -29,7 +28,8 @@ type HTTPServer struct {
 }
 
 func LoadConfig() *Config {
-	configPath := os.Getenv("./config.yaml")
+	configPath := "./config.yaml"
+
 	if configPath == "" {
 		log.Fatalf("config path is not set or config file does not exist")
 	}
