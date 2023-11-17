@@ -2,7 +2,10 @@ module user-admin
 
 go 1.19
 
-require github.com/ilyakaznacheev/cleanenv v1.5.0
+require (
+	github.com/ilyakaznacheev/cleanenv v1.5.0
+	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
+)
 
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
