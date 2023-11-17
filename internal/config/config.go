@@ -4,6 +4,8 @@ import "time"
 
 type Config struct {
 	Env string `yaml:"env"`
+	Database `yaml:"database"`
+	HTTPServer `yaml:"http_server"`
 }
 
 type Database struct {
