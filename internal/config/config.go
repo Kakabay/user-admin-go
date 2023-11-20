@@ -29,7 +29,7 @@ type HTTPServer struct {
 }
 
 func LoadConfig() *Config {
-	configPath := "./config.yaml"
+	configPath := "./config/config.yaml"
 
 	if configPath == "" {
 		log.Fatalf("config path is not set or config file does not exist")
