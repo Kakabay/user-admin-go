@@ -8,13 +8,15 @@ import (
 	_ "github.com/lib/pq" // init postgresql driver
 )
 
-var db *sql.DB
+type Database struct {
+	db *sql.DB
+}
 
-func InitDB(cfg *config.Config) (*sql.DB, error) {
+func InitDB(cfg *config.Config) (*Database, error) {
 	connectionString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.DBname, cfg.Sslmode)
 
 	var err error 
-	db, err = sql.Open("postgres", connectionString)
+	db, err := sql.Open("postgres", connectionString)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize database: %v", err)
 	}
@@ -23,9 +25,18 @@ func InitDB(cfg *config.Config) (*sql.DB, error) {
 		return nil, fmt.Errorf("failed to ping database: %v", err)
 	}
 
-	return db, nil
+	return &Database{db: db}, nil
 }
 
-func GetDB() *sql.DB {
-	return db
+// Close closes the database connection
+func (d *Database) Close() error {
+	if d.db != nil {
+		return d.db.Close()
+	}
+	return nil
+}
+
+// GetDB returns the underlying sql.DB instance
+func (d *Database) GetDB() *sql.DB {
+	return d.db
 }
