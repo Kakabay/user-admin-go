@@ -2,7 +2,10 @@ package main
 
 import (
 	"log/slog"
+	"os"
 	"user-admin/internal/config"
+	"user-admin/internal/database"
+	log_utils "user-admin/internal/lib/logger_utils"
 	"user-admin/internal/logger"
 )
 
@@ -13,4 +16,11 @@ func main() {
 
 	log.Info("Starting the server...", slog.String("env", cfg.Env))
 	log.Debug("Debug messages are enabled") // if env is set to prod, debug messages are going to be disabled
+
+	db, err := database.InitDB(cfg)
+	if err != nil {
+		log.Error("Failed to init database:", log_utils.Err(err))
+		os.Exit(1)
+	} 
+	defer db.Close()
 }
