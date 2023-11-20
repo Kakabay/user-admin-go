@@ -4,9 +4,9 @@ import (
 	"log/slog"
 	"os"
 	"user-admin/internal/config"
-	"user-admin/internal/database"
-	log_utils "user-admin/internal/lib/logger_utils"
-	"user-admin/internal/logger"
+	"user-admin/pkg/database"
+	log_utils "user-admin/pkg/lib/logger_utils"
+	"user-admin/pkg/logger"
 )
 
 func main() {
