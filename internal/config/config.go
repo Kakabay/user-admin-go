@@ -18,6 +18,7 @@ type Database struct {
 	Port     string `yaml:"port"`
 	User     string `yaml:"user"`
 	Password string `yaml:"password"`
+	DBname   string `yaml:"dbname"`
 	Sslmode  string `yaml:"sslmode"`
 }
 
