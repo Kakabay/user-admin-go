@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"user-admin/internal/config"
 
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" // init postgresql driver
 )
 
 var db *sql.DB
@@ -16,11 +16,11 @@ func InitDB(cfg *config.Config) (*sql.DB, error) {
 	var err error 
 	db, err = sql.Open("postgres", connectionString)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to initialize database: %v", err)
+		return nil, fmt.Errorf("failed to initialize database: %v", err)
 	}
 
 	if err := db.Ping(); err != nil {
-		return nil, fmt.Errorf("Failed to ping database: %v", err)
+		return nil, fmt.Errorf("failed to ping database: %v", err)
 	}
 
 	return db, nil
