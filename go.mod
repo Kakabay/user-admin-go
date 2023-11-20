@@ -5,7 +5,6 @@ go 1.19
 require (
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/lib/pq v1.10.9
-	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
 )
 
 require (
