@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"user-admin/internal/domain"
 )
@@ -12,14 +13,19 @@ type PostgresUserRepository struct {
 }
 
 func (r *PostgresUserRepository) GetAllUsers() (*domain.UsersList, error) {
-	rows, err := r.DB.QueryContext(context.TODO(), `
-	SELECT id, first_name, last_name, phone_number, blocked, 
-	registration_date, gender, date_of_birth, location, 
-	email, profile_photo_url
-	FROM users`)
+	stmt, err := r.DB.Prepare(`
+		SELECT id, first_name, last_name, phone_number, blocked, 
+		registration_date, gender, date_of_birth, location, 
+		email, profile_photo_url
+		FROM users`)
 	if err != nil {
-		log.Printf("Error querying users: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("error preparing query: %v", err)
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.QueryContext(context.TODO())
+	if err != nil {
+		return nil, fmt.Errorf("error querying users: %v", err)
 	}
 	defer rows.Close()
 
