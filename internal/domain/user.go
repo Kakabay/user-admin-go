@@ -14,7 +14,7 @@ type UserID struct {
 	ID int32 `json:"id"`
 }
 
-// CommonUserResponse captures the common properties for CreateUserResponse and UpdateUserResponse
+// CommonUserResponse captures the common properties for GetUserResponse, CreateUserResponse and UpdateUserResponse
 type CommonUserResponse struct {
 	ID               int32       `json:"id"`
 	FirstName        string      `json:"first_name"`
