@@ -1,4 +1,4 @@
-package user
+package domain
 
 import "time"
 
@@ -77,7 +77,7 @@ type UpdateUserResponse struct {
 	PhoneNumber      string          `json:"phone_number"`
 	Blocked          bool            `json:"blocked"`
 	Gender           string          `json:"gender"`
-	RegistrationDate time.Time `json:"registration_date"`
+	RegistrationDate time.Time 		 `json:"registration_date"`
 	DateOfBirth      DateOfBirth     `json:"date_of_birth"`
 	Location         string          `json:"location"`
 	Email            string          `json:"email"`
