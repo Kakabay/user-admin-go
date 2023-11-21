@@ -14,12 +14,8 @@ type UserID struct {
 	ID int32 `json:"id"`
 }
 
-// ADD PAGINATION(!)
-type UsersList struct {
-	Users []GetUserResponse `json:"users"`
-}
-
-type GetUserResponse struct {
+// CommonUserResponse captures the common properties for CreateUserResponse and UpdateUserResponse
+type CommonUserResponse struct {
 	ID               int32       `json:"id"`
 	FirstName        string      `json:"first_name"`
 	LastName         string      `json:"last_name"`
@@ -27,11 +23,18 @@ type GetUserResponse struct {
 	Blocked          bool        `json:"blocked"`
 	Gender           string      `json:"gender"`
 	RegistrationDate time.Time   `json:"registration_date"`
-	DateOfBirth      Date 		 `json:"date_of_birth"`
+	DateOfBirth      Date        `json:"date_of_birth"`
 	Location         string      `json:"location"`
 	Email            string      `json:"email"`
 	ProfilePhotoURL  string      `json:"profile_photo_url"`
 }
+
+// ADD PAGINATION(!)
+type UsersList struct {
+	Users []CommonUserResponse `json:"users"`
+}
+
+type GetUserResponse CommonUserResponse
 
 type CreateUserRequest struct {
 	FirstName       string      `json:"first_name"`
@@ -44,19 +47,7 @@ type CreateUserRequest struct {
 	ProfilePhotoURL string      `json:"profile_photo_url"`
 }
 
-type CreateUserResponse struct {
-	ID               int32           `json:"id"`
-	FirstName        string          `json:"first_name"`
-	LastName         string          `json:"last_name"`
-	PhoneNumber      string          `json:"phone_number"`
-	Blocked          bool            `json:"blocked"`
-	Gender           string          `json:"gender"`
-	RegistrationDate time.Time 		 `json:"registration_date"`
-	DateOfBirth      Date   	     `json:"date_of_birth"`
-	Location         string          `json:"location"`
-	Email            string          `json:"email"`
-	ProfilePhotoURL  string          `json:"profile_photo_url"`
-}
+type CreateUserResponse CommonUserResponse
 
 type UpdateUserRequest struct {
 	ID              int32       `json:"id"`
@@ -70,16 +61,4 @@ type UpdateUserRequest struct {
 	ProfilePhotoURL string      `json:"profile_photo_url"`
 }
 
-type UpdateUserResponse struct {
-	ID               int32           `json:"id"`
-	FirstName        string          `json:"first_name"`
-	LastName         string          `json:"last_name"`
-	PhoneNumber      string          `json:"phone_number"`
-	Blocked          bool            `json:"blocked"`
-	Gender           string          `json:"gender"`
-	RegistrationDate time.Time 		 `json:"registration_date"`
-	DateOfBirth      Date    		 `json:"date_of_birth"`
-	Location         string          `json:"location"`
-	Email            string          `json:"email"`
-	ProfilePhotoURL  string          `json:"profile_photo_url"`
-}
+type UpdateUserResponse CommonUserResponse
