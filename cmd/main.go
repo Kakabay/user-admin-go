@@ -2,11 +2,15 @@ package main
 
 import (
 	"log/slog"
+	"net/http"
 	"os"
 	"user-admin/internal/config"
 	"user-admin/pkg/database"
 	log_utils "user-admin/pkg/lib/logger_utils"
 	"user-admin/pkg/logger"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
@@ -23,4 +27,15 @@ func main() {
 		os.Exit(1)
 	} 
 	defer db.Close()
+
+	router := chi.NewRouter()
+	router.Use(middleware.RequestID)
+	router.Use(middleware.Logger)
+	router.Use(middleware.Recoverer)
+	
+	log.Info("Starting the server...")
+	err = http.ListenAndServe(":8080", router)
+	if err != nil {
+		log.Error("Server failed to start:", err)
+	}
 }
