@@ -8,8 +8,6 @@ type Date struct {
 	Year  int32  `json:"year"`
 }
 
-type Empty struct{}
-
 type UserID struct {
 	ID int32 `json:"id"`
 }
