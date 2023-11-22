@@ -7,12 +7,15 @@ import (
 	"os/signal"
 	"syscall"
 	"user-admin/internal/config"
-	"user-admin/pkg/database"
+	handlers "user-admin/internal/delivery/v1/handlers/user"
+	repository "user-admin/internal/repository/postgres"
+	"user-admin/internal/service"
+	database "user-admin/pkg/database"
 	log_utils "user-admin/pkg/lib/logger_utils"
 	"user-admin/pkg/logger"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 )
 
 func main() {
@@ -30,12 +33,10 @@ func main() {
 	}
 	defer db.Close()
 
-	router := chi.NewRouter()
-	router.Use(middleware.RequestID)
-	router.Use(middleware.Logger) // it is optional, but it let's you to log middleware itself
-	router.Use(middleware.Recoverer)
+	userRepository := repository.NewPostgresUserRepository(db.GetDB())
+	userService := service.NewUserService(userRepository)
 
-	log.Info("Starting the server...")
+	userHandler := handlers.NewUserHandler(userService)
 
 	// Handle graceful shutdown by using concurent function that is going to wait signal in backround
 	stop := make(chan os.Signal, 1)
@@ -51,7 +52,15 @@ func main() {
 		os.Exit(0)
 	}()
 
-	err = http.ListenAndServe(":8080", router)
+	router := chi.NewRouter()
+	router.Use(middleware.RequestID)
+	router.Use(middleware.Logger)
+	router.Use(middleware.Recoverer)
+
+	// Mount routes from userHandler
+	router.Mount("/api", userHandler.NewRoutes())
+
+	err = http.ListenAndServe(":8082", router)
 	if err != nil {
 		log.Error("Server failed to start:", err)
 	}
