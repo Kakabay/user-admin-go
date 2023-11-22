@@ -32,12 +32,12 @@ func main() {
 
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID)
-	router.Use(middleware.Logger)
+	router.Use(middleware.Logger) // it is optional, but it let's you to log middleware itself
 	router.Use(middleware.Recoverer)
 
 	log.Info("Starting the server...")
 
-	// Handle graceful shutdown
+	// Handle graceful shutdown by using concurent function that is going to wait signal in backround
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
