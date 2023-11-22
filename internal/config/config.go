@@ -9,7 +9,7 @@ import (
 
 type Config struct {
 	Env string `yaml:"env"`
-	Database `yaml:"database"`
+	Database   `yaml:"database"`
 	HTTPServer `yaml:"http_server"`
 }
 
@@ -23,8 +23,8 @@ type Database struct {
 }
 
 type HTTPServer struct {
-	Address string `yaml:"address"`
-	Timeout time.Duration `yaml:"timeout"`
+	Address      string        `yaml:"address"`
+	Timeout      time.Duration `yaml:"timeout"`
 	Idle_Timeout time.Duration `yaml:"idle_timeout"`
 }
 
