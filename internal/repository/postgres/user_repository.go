@@ -48,6 +48,18 @@ func (r *PostgresUserRepository) GetAllUsers() (*domain.UsersList, error) {
 			return nil, err
 		}
 
+		if firstName.Valid {
+			user.FirstName = firstName.String
+		}
+
+		if lastName.Valid {
+			user.LastName = lastName.String
+		}
+
+		if gender.Valid {
+			user.Gender = gender.String
+		}
+
         if dateOfBirth.Valid {
 			// Extract year, month, and day from the Date of Birth
 			user.DateOfBirth.Year = int32(dateOfBirth.Time.Year())
@@ -55,6 +67,10 @@ func (r *PostgresUserRepository) GetAllUsers() (*domain.UsersList, error) {
 			user.DateOfBirth.Day = int32(dateOfBirth.Time.Day())
 		}
 
+		if location.Valid {
+			user.Location = location.String
+		}
+		
         if email.Valid {
             user.Email = email.String
         }
