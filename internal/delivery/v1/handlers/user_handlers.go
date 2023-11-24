@@ -6,27 +6,12 @@ import (
 	"net/http"
 	"user-admin/internal/service"
 
-	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
 )
 
 type UserHandler struct {
 	UserService *service.UserService
-}
-
-func NewUserHandler(userService *service.UserService) *UserHandler {
-	return &UserHandler{UserService: userService}
-}
-
-func (h *UserHandler) NewRoutes() http.Handler {
-	router := chi.NewRouter()
-	router.Use(middleware.RequestID)
-	router.Use(middleware.Logger) // it is optional, but it let's you to log middleware itself
-	router.Use(middleware.Recoverer)
-
-	router.Get("/users", h.GetAllUsersHandler)
-
-	return router
+	Router *chi.Mux
 }
 
 func (h *UserHandler) GetAllUsersHandler(w http.ResponseWriter, r *http.Request) {
