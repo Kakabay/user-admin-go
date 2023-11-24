@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"user-admin/internal/domain"
+	"user-admin/pkg/lib/utils"
 )
 
 type PostgresUserRepository struct {
@@ -48,17 +49,12 @@ func (r *PostgresUserRepository) GetAllUsers() (*domain.UsersList, error) {
 			return nil, err
 		}
 
-		if firstName.Valid {
-			user.FirstName = firstName.String
-		}
-
-		if lastName.Valid {
-			user.LastName = lastName.String
-		}
-
-		if gender.Valid {
-			user.Gender = gender.String
-		}
+		user.FirstName = utils.HandleNullString(firstName)
+		user.LastName = utils.HandleNullString(lastName)
+		user.Gender = utils.HandleNullString(gender)
+		user.Location = utils.HandleNullString(location)
+		user.Email = utils.HandleNullString(email)
+		user.ProfilePhotoURL = utils.HandleNullString(profilePhotoURL)
 
         if dateOfBirth.Valid {
 			// Extract year, month, and day from the Date of Birth
@@ -66,18 +62,6 @@ func (r *PostgresUserRepository) GetAllUsers() (*domain.UsersList, error) {
 			user.DateOfBirth.Month = int32(dateOfBirth.Time.Month())
 			user.DateOfBirth.Day = int32(dateOfBirth.Time.Day())
 		}
-
-		if location.Valid {
-			user.Location = location.String
-		}
-		
-        if email.Valid {
-            user.Email = email.String
-        }
-
-        if profilePhotoURL.Valid {
-            user.ProfilePhotoURL = profilePhotoURL.String
-        }
 
 		userList.Users = append(userList.Users, user)
 	}
