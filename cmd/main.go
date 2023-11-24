@@ -39,7 +39,8 @@ func main() {
 		Router: chi.NewRouter(),
 	}
 
-	userHandler.Router.Get("/users", userHandler.GetAllUsersHandler)
+	userHandler.Router.Get("/user", userHandler.GetAllUsersHandler)
+	userHandler.Router.Get("/user/{id}", userHandler.GetUserByIDHandler)
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)

@@ -89,13 +89,29 @@ func (r *PostgresUserRepository) GetUserByID(id int32) (*domain.GetUserResponse,
 	row := stmt.QueryRowContext(context.TODO(), id)
 
 	var user domain.GetUserResponse
+        var firstName, lastName,  gender, location, email, profilePhotoURL sql.NullString
+        var dateOfBirth sql.NullTime
 	err = row.Scan(
-		&user.ID, &user.FirstName, &user.LastName, &user.PhoneNumber, &user.Blocked,
-        &user.RegistrationDate, &user.Gender, &user.DateOfBirth, &user.Location,
-        &user.Email, &user.ProfilePhotoURL,
+		&user.ID, &firstName, &lastName, &user.PhoneNumber, &user.Blocked,
+        &user.RegistrationDate, &gender, &dateOfBirth, &location,
+        &email, &profilePhotoURL,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error scanning user row: %v", err)
+	}
+
+	user.FirstName = utils.HandleNullString(firstName)
+	user.LastName = utils.HandleNullString(lastName)
+	user.Gender = utils.HandleNullString(gender)
+	user.Location = utils.HandleNullString(location)
+	user.Email = utils.HandleNullString(email)
+	user.ProfilePhotoURL = utils.HandleNullString(profilePhotoURL)
+
+    if dateOfBirth.Valid {
+		// Extract year, month, and day from the Date of Birth
+		user.DateOfBirth.Year = int32(dateOfBirth.Time.Year())
+		user.DateOfBirth.Month = int32(dateOfBirth.Time.Month())
+		user.DateOfBirth.Day = int32(dateOfBirth.Time.Day())
 	}
 
 	return &user, err
