@@ -11,7 +11,7 @@ import (
 	repository "user-admin/internal/repository/postgres"
 	"user-admin/internal/service"
 	database "user-admin/pkg/database"
-	log_utils "user-admin/pkg/lib/logger_utils"
+	utils "user-admin/pkg/lib/utils"
 	"user-admin/pkg/logger"
 
 	"github.com/go-chi/chi/v5"
@@ -27,7 +27,7 @@ func main() {
 
 	db, err := database.InitDB(cfg)
 	if err != nil {
-		log.Error("Failed to init database:", log_utils.Err(err))
+		log.Error("Failed to init database:", utils.Err(err))
 		os.Exit(1)
 	}
 	defer db.Close()
@@ -49,7 +49,7 @@ func main() {
 		log.Info("Shutting down the server gracefully...")
 
 		if err := db.Close(); err != nil {
-			log.Error("Error closing database:", log_utils.Err(err))
+			log.Error("Error closing database:", utils.Err(err))
 		}
 		os.Exit(0)
 	}()
