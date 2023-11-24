@@ -36,15 +36,33 @@ func (r *PostgresUserRepository) GetAllUsers() (*domain.UsersList, error) {
 	var userList domain.UsersList
 	for rows.Next() {
 		var user domain.CommonUserResponse
+        var firstName, lastName,  gender, location, email, profilePhotoURL sql.NullString
+        var dateOfBirth sql.NullTime
 		err := rows.Scan(
-			&user.ID, &user.FirstName, &user.LastName, &user.PhoneNumber, &user.Blocked,
-			&user.RegistrationDate, &user.Gender, &user.DateOfBirth, &user.Location,
-			&user.Email, &user.ProfilePhotoURL,
+			&user.ID, &firstName, &lastName, &user.PhoneNumber, &user.Blocked,
+			&user.RegistrationDate, &gender, &dateOfBirth, 
+			&location, &email, &profilePhotoURL,
 		)
 		if err != nil {
 			log.Printf("Error scanning user row: %v", err)
 			return nil, err
 		}
+
+        if dateOfBirth.Valid {
+			// Extract year, month, and day from the Date of Birth
+			user.DateOfBirth.Year = int32(dateOfBirth.Time.Year())
+			user.DateOfBirth.Month = int32(dateOfBirth.Time.Month())
+			user.DateOfBirth.Day = int32(dateOfBirth.Time.Day())
+		}
+
+        if email.Valid {
+            user.Email = email.String
+        }
+
+        if profilePhotoURL.Valid {
+            user.ProfilePhotoURL = profilePhotoURL.String
+        }
+
 		userList.Users = append(userList.Users, user)
 	}
 

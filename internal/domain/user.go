@@ -1,6 +1,8 @@
 package domain
 
-import "time"
+import (
+	"time"
+)
 
 type Date struct {
 	Day   int32  `json:"day"`
