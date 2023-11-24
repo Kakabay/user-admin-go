@@ -32,19 +32,15 @@ func main() {
 	}
 	defer db.Close()
 
-	// Initialize user service and handler
 	userRepository := repository.NewPostgresUserRepository(db.GetDB())
-	userService := service.NewUserService(userRepository) // initialize your user service here
+	userService := service.NewUserService(userRepository)
 	userHandler := handlers.UserHandler{
 		UserService: userService, 
 		Router: chi.NewRouter(),
 	}
 
-	// Define routes
 	userHandler.Router.Get("/users", userHandler.GetAllUsersHandler)
 
-
-	// Handle graceful shutdown by using concurent function that is going to wait signal in backround
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
