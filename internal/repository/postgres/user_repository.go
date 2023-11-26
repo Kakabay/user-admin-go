@@ -131,13 +131,13 @@ func (r *PostgresUserRepository) CreateUser(request *domain.CreateUserRequest) (
 		return nil, fmt.Errorf("error preparing query: %v", err)
 	}
 	defer stmt.Close()
-	
+
 	var user domain.CreateUserResponse
 	err = stmt.QueryRow(
-		request.FirstName, request.LastName, request.PhoneNumber,
-		request.Gender, request.DateOfBirth, request.Location, // if you are able to show registration date in response, try it
-        request.Email, request.ProfilePhotoURL,
-    ).Scan(
+		utils.NullIfEmptyStr(request.FirstName), utils.NullIfEmptyStr(request.LastName), request.PhoneNumber,
+		request.Gender, utils.NullIfEmptyDate(request.DateOfBirth), utils.NullIfEmptyStr(request.Location), // if you are able to show registration date in response, try it
+		utils.NullIfEmptyStr(request.Email), utils.NullIfEmptyStr(request.ProfilePhotoURL),
+	).Scan(
         &user.ID, &user.FirstName, &user.LastName, &user.PhoneNumber, 
         &user.Gender, &user.DateOfBirth, &user.Location,
         &user.Email, &user.ProfilePhotoURL,
