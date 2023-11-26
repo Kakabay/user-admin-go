@@ -5,6 +5,7 @@ import (
 	log "log/slog"
 	"net/http"
 	"strconv"
+	"user-admin/internal/domain"
 	"user-admin/internal/service"
 
 	"github.com/go-chi/chi/v5"
@@ -52,6 +53,27 @@ func (h *UserHandler) GetUserByIDHandler(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(user)
 }
+
+func (h *UserHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
+	var createUserRequest domain.CreateUserRequest
+	err := json.NewDecoder(r.Body).Decode(&createUserRequest)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	user, err := h.UserService.CreateUser(&createUserRequest)
+	if err != nil {
+		log.Error("Error creating user: ", err)
+		http.Error(w, "Error creating user", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(user)
+}
+
 
 func (h *UserHandler) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
     idStr := chi.URLParam(r, "id")
