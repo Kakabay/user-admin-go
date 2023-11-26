@@ -74,7 +74,7 @@ func (h *UserHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request) 
 	json.NewEncoder(w).Encode(user)
 }
 
-func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 	var updateUserRequest domain.UpdateUserRequest
 	err := json.NewDecoder(r.Body).Decode(&updateUserRequest)
 	if err != nil {
