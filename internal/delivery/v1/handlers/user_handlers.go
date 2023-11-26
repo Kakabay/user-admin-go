@@ -71,3 +71,41 @@ func (h *UserHandler) DeleteUserHandler(w http.ResponseWriter, r *http.Request) 
     w.WriteHeader(http.StatusOK)
     w.Write([]byte("User deleted successfully"))
 }
+
+func (h *UserHandler) BlockUserHandler(w http.ResponseWriter, r *http.Request) {
+    idStr := chi.URLParam(r, "id")
+    id, err := strconv.Atoi(idStr)
+    if err != nil {
+        http.Error(w, "Invalid ID", http.StatusBadRequest)
+        return
+    }
+
+    err = h.UserService.BlockUser(int32(id))
+    if err != nil {
+        log.Error("Error blocking user: ", err)
+        http.Error(w, "Error blocking user", http.StatusInternalServerError)
+        return
+    }
+
+    w.WriteHeader(http.StatusOK)
+    w.Write([]byte("User blocked successfully"))
+}
+
+func (h *UserHandler) UnblockUserHandler(w http.ResponseWriter, r *http.Request) {
+    idStr := chi.URLParam(r, "id")
+    id, err := strconv.Atoi(idStr)
+    if err != nil {
+        http.Error(w, "Invalid ID", http.StatusBadRequest)
+        return
+    }
+
+    err = h.UserService.UnblockUser(int32(id))
+    if err != nil {
+        log.Error("Error unblocking user by ID: ", err)
+        http.Error(w, "Error unblocking user", http.StatusInternalServerError)
+        return
+    }
+
+    w.WriteHeader(http.StatusOK)
+    w.Write([]byte("User unblocked successfully"))
+}
