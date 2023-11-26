@@ -41,6 +41,7 @@ func main() {
 
 	userHandler.Router.Get("/user", userHandler.GetAllUsersHandler)
 	userHandler.Router.Get("/user/{id}", userHandler.GetUserByIDHandler)
+	userHandler.Router.Post("/user", userHandler.CreateUserHandler)
 	userHandler.Router.Delete("/user/{id}", userHandler.DeleteUserHandler)
 	userHandler.Router.Post("/user/{id}/block", userHandler.BlockUserHandler)
 	userHandler.Router.Post("/user/{id}/unblock", userHandler.UnblockUserHandler)
