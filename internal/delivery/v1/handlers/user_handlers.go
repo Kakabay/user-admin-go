@@ -2,7 +2,7 @@ package user_handlers
 
 import (
 	"encoding/json"
-	log "log/slog"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"user-admin/internal/domain"
@@ -19,7 +19,7 @@ type UserHandler struct {
 func (h *UserHandler) GetAllUsersHandler(w http.ResponseWriter, r *http.Request) {
 	users, err := h.UserService.GetAllUsers()
 	if err != nil {
-		log.Error("Error getting users: ", err)
+		slog.Error("Error getting users: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Internal Server Error"))
 		return
@@ -29,7 +29,7 @@ func (h *UserHandler) GetAllUsersHandler(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(users)
 	if err != nil {
-		log.Error("Error encoding JSON: ", err)
+		slog.Error("Error encoding JSON: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Internal Server Error"))
 	}
@@ -45,7 +45,7 @@ func (h *UserHandler) GetUserByIDHandler(w http.ResponseWriter, r *http.Request)
 
 	user, err := h.UserService.GetUserByID(int32(id))
 	if err != nil {
-		log.Error("Error retrieving user: ", err)
+		slog.Error("Error retrieving user: ", err)
 		http.Error(w, "Error retrieving user", http.StatusInternalServerError)
 		return
 	}
@@ -64,7 +64,7 @@ func (h *UserHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request) 
 
 	user, err := h.UserService.CreateUser(&createUserRequest)
 	if err != nil {
-		log.Error("Error creating user: ", err)
+		slog.Error("Error creating user: ", err)
 		http.Error(w, "Error creating user", http.StatusInternalServerError)
 		return
 	}
@@ -74,6 +74,25 @@ func (h *UserHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request) 
 	json.NewEncoder(w).Encode(user)
 }
 
+func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
+	var updateUserRequest domain.UpdateUserRequest
+	err := json.NewDecoder(r.Body).Decode(&updateUserRequest)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	user, err := h.UserService.UpdateUser(&updateUserRequest)
+	if err != nil {
+		slog.Error("Error updating user: ", err)
+		http.Error(w, "Error updating user", http.StatusInternalServerError)
+		return 
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(user)
+}
 
 func (h *UserHandler) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
     idStr := chi.URLParam(r, "id")
@@ -85,7 +104,7 @@ func (h *UserHandler) DeleteUserHandler(w http.ResponseWriter, r *http.Request) 
 
     err = h.UserService.DeleteUser(int32(id))
     if err != nil {
-        log.Error("Error deleting user: ", err)
+        slog.Error("Error deleting user: ", err)
         http.Error(w, "Error deleting user", http.StatusInternalServerError)
         return
     }
@@ -104,7 +123,7 @@ func (h *UserHandler) BlockUserHandler(w http.ResponseWriter, r *http.Request) {
 
     err = h.UserService.BlockUser(int32(id))
     if err != nil {
-        log.Error("Error blocking user: ", err)
+        slog.Error("Error blocking user: ", err)
         http.Error(w, "Error blocking user", http.StatusInternalServerError)
         return
     }
@@ -123,7 +142,7 @@ func (h *UserHandler) UnblockUserHandler(w http.ResponseWriter, r *http.Request)
 
     err = h.UserService.UnblockUser(int32(id))
     if err != nil {
-        log.Error("Error unblocking user by ID: ", err)
+        slog.Error("Error unblocking user by ID: ", err)
         http.Error(w, "Error unblocking user", http.StatusInternalServerError)
         return
     }
