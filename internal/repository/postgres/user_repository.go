@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
+	"log/slog"
 	"strconv"
 	"strings"
 	"user-admin/internal/domain"
@@ -47,7 +47,7 @@ func (r *PostgresUserRepository) GetAllUsers() (*domain.UsersList, error) {
 			&location, &email, &profilePhotoURL,
 		)
 		if err != nil {
-			log.Printf("Error scanning user row: %v", err)
+			slog.Error("Error scanning user row: %v", err)
 			return nil, err
 		}
 
@@ -69,7 +69,7 @@ func (r *PostgresUserRepository) GetAllUsers() (*domain.UsersList, error) {
 	}
 
 	if err := rows.Err(); err != nil {
-		log.Printf("Error iterating  over user rows: %v", err)
+		slog.Error("Error iterating  over user rows: %v", err)
 		return nil, err
 	}
 
@@ -84,7 +84,8 @@ func (r *PostgresUserRepository) GetUserByID(id int32) (*domain.GetUserResponse,
 	`)
 
 	if err != nil {
-		return nil, fmt.Errorf("error preparing query: %v", err)
+		slog.Error("error preparing query: %v", err)
+		return nil, err
 	}
 	defer stmt.Close()
 
@@ -99,7 +100,8 @@ func (r *PostgresUserRepository) GetUserByID(id int32) (*domain.GetUserResponse,
         &email, &profilePhotoURL,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error scanning user row: %v", err)
+		slog.Error("error scanning user row: %v", err)
+		return nil, err
 	}
 
 	user.FirstName = utils.HandleNullString(firstName)
@@ -145,7 +147,8 @@ func (r *PostgresUserRepository) CreateUser(request *domain.CreateUserRequest) (
         &user.Email, &user.ProfilePhotoURL,
     )
 	if err != nil {
-		return nil, fmt.Errorf("error executing query: %v", err)
+		slog.Error("error executing query: %v", err)
+		return nil, err
 	}
 
 	return &user, nil
@@ -203,7 +206,8 @@ func (r PostgresUserRepository) UpdateUser(request *domain.UpdateUserRequest) (*
 
 	stmt, err := r.DB.Prepare(updateQuery)
 	if err != nil {
-		return nil, fmt.Errorf("error preparing query: %v", err)
+		slog.Error("error preparing query: %v", err)
+		return nil, err
 	}
 	defer stmt.Close()
 
@@ -212,7 +216,8 @@ func (r PostgresUserRepository) UpdateUser(request *domain.UpdateUserRequest) (*
         &user.ID, &user.FirstName, &user.LastName, &user.PhoneNumber, &user.Gender, &user.DateOfBirth, &user.Location, &user.Email, &user.ProfilePhotoURL,
     )
 	if err != nil {
-		return nil, fmt.Errorf("error executing  query: %v", err)
+		slog.Error("error executing  query: %v", err)
+		return nil, err
 	}
 
 	return &user, nil
@@ -221,13 +226,15 @@ func (r PostgresUserRepository) UpdateUser(request *domain.UpdateUserRequest) (*
 func (r PostgresUserRepository) DeleteUser(id int32) error {
 	stmt, err := r.DB.Prepare(`DELETE FROM users WHERE id = $1`)
     if err != nil {
-        return fmt.Errorf("error preparing query: %v", err)
+		slog.Error("error preparing query: %v", err)
+        return err
     }
     defer stmt.Close()
 	
 	_, err = stmt.Exec(id)
 	if err != nil {
-		return fmt.Errorf("error executing query: %v", err)
+		slog.Error("error executing query: %v", err)
+		return err
 	}
 
 	return nil
@@ -236,13 +243,15 @@ func (r PostgresUserRepository) DeleteUser(id int32) error {
 func (r *PostgresUserRepository) BlockUser(id int32) error {
     stmt, err := r.DB.Prepare("UPDATE users SET blocked = true WHERE id = $1")
     if err != nil {
-        return fmt.Errorf("error preparing query: %v", err)
+        slog.Error("error preparing query: %v", err)
+        return err
     }
     defer stmt.Close()
 
     _, err = stmt.Exec(id)
     if err != nil {
-        return fmt.Errorf("error executing query: %v", err)
+        slog.Error("error executing query: %v", err)
+		return err
     }
 
     return nil
@@ -251,13 +260,15 @@ func (r *PostgresUserRepository) BlockUser(id int32) error {
 func (r *PostgresUserRepository) UnblockUser(id int32) error {
     stmt, err := r.DB.Prepare("UPDATE users SET blocked = false WHERE id = $1")
     if err != nil {
-        return fmt.Errorf("error preparing query: %v", err)
+        slog.Error("error preparing query: %v", err)
+        return err
     }
     defer stmt.Close()
 
     _, err = stmt.Exec(id)
     if err != nil {
-        return fmt.Errorf("error executing query: %v", err)
+        slog.Error("error executing query: %v", err)
+		return err
     }
 
     return nil
