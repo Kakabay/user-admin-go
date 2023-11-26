@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strconv"
+	"strings"
 	"user-admin/internal/domain"
 	"user-admin/pkg/lib/utils"
 )
@@ -150,30 +152,64 @@ func (r *PostgresUserRepository) CreateUser(request *domain.CreateUserRequest) (
 }
 
 func (r PostgresUserRepository) UpdateUser(request *domain.UpdateUserRequest) (*domain.UpdateUserResponse, error) {
-	stmt, err := r.DB.Prepare(`
-		UPDATE users
-		SET first_name = $2, last_name = $3, phone_number = $4, blocked = $5,
-			registration_date = $6, gender = $7, date_of_birth = $8, location = $9,
-			email = $10, profile_photo_url = $11
-		WHERE id = $1
-		RETURNING id, first_name, last_name, phone_number, blocked,
-			registration_date, gender, date_of_birth, location,
-			email, profile_photo_url
-	`)
+	updateQuery := "UPDATE users SET"
+	var queryParams []interface{}
+	var queryArgs []string
+
+	if request.FirstName != "" {
+		queryArgs = append(queryArgs, "first_name = $"+strconv.Itoa(len(queryParams)+1))
+		queryParams = append(queryParams, request.FirstName)
+	}
+
+	if request.LastName != "" {
+		queryArgs = append(queryArgs, "last_name = $"+strconv.Itoa(len(queryParams)+1))
+		queryParams = append(queryParams, request.LastName)
+	}
+
+	if request.PhoneNumber != "" {
+		queryArgs = append(queryArgs, "phone_number = $"+strconv.Itoa(len(queryParams)+1))
+		queryParams = append(queryParams, request.PhoneNumber)
+	}
+
+	if request.Gender != "" {
+		queryArgs = append(queryArgs, "gender = $"+strconv.Itoa(len(queryParams)+1))
+		queryParams = append(queryParams, request.Gender)
+	}
+
+	if request.DateOfBirth.Year != 0 || request.DateOfBirth.Month != 0 || request.DateOfBirth.Day != 0 {
+		queryArgs = append(queryArgs, "date_of_birth = $"+strconv.Itoa(len(queryParams)+1))
+		queryParams = append(queryParams, request.DateOfBirth)
+	}
+
+	if request.Location != "" {
+		queryArgs = append(queryArgs, "location = $"+strconv.Itoa(len(queryParams)+1))
+		queryParams = append(queryParams, request.Location)
+	}
+
+	if request.Email != "" {
+		queryArgs = append(queryArgs, "email = $"+strconv.Itoa(len(queryParams)+1))
+		queryParams = append(queryParams, request.Email)
+	}
+
+	if request.ProfilePhotoURL != "" {
+		queryArgs = append(queryArgs, "profile_photo_url = $"+strconv.Itoa(len(queryParams)+1))
+		queryParams = append(queryParams, request.ProfilePhotoURL)
+	}
+
+	updateQuery += " " + strings.Join(queryArgs, ", ") + " WHERE id = $" + strconv.Itoa(len(queryParams)+1)
+	queryParams = append(queryParams, request.ID)
+
+	updateQuery += " RETURNING id, first_name, last_name, phone_number, gender, date_of_birth, location, email, profile_photo_url"
+
+	stmt, err := r.DB.Prepare(updateQuery)
 	if err != nil {
 		return nil, fmt.Errorf("error preparing query: %v", err)
 	}
 	defer stmt.Close()
 
 	var user domain.UpdateUserResponse
-	err = stmt.QueryRow(
-        request.ID, request.FirstName, request.LastName, request.PhoneNumber, 
-		request.Gender, request.DateOfBirth, request.Location,
-        request.Email, request.ProfilePhotoURL,
-    ).Scan(
-        &user.ID, &user.FirstName, &user.LastName, &user.PhoneNumber, &user.Blocked,
-        &user.RegistrationDate, &user.Gender, &user.DateOfBirth, &user.Location,
-        &user.Email, &user.ProfilePhotoURL,
+	err = stmt.QueryRow(queryParams...).Scan(
+        &user.ID, &user.FirstName, &user.LastName, &user.PhoneNumber, &user.Gender, &user.DateOfBirth, &user.Location, &user.Email, &user.ProfilePhotoURL,
     )
 	if err != nil {
 		return nil, fmt.Errorf("error executing  query: %v", err)
