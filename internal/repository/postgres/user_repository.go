@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"strconv"
 	"strings"
@@ -226,6 +227,17 @@ func (r PostgresUserRepository) UpdateUser(request *domain.UpdateUserRequest) (*
 }
 
 func (r PostgresUserRepository) DeleteUser(id int32) error {
+	var exists bool
+	err := r.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)`, id).Scan(&exists)
+	if err != nil {
+		slog.Error("error checking user existence: %v", utils.Err(err))
+		return err
+	}
+
+	if !exists {
+		return fmt.Errorf("user with ID %d not found", id)
+	}
+
 	stmt, err := r.DB.Prepare(`DELETE FROM users WHERE id = $1`)
     if err != nil {
 		slog.Error("error preparing query: %v", err)
