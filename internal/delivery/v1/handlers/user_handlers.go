@@ -2,6 +2,7 @@ package user_handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -106,7 +107,7 @@ func (h *UserHandler) DeleteUserHandler(w http.ResponseWriter, r *http.Request) 
     err = h.UserService.DeleteUser(int32(id))
     if err != nil {
         slog.Error("Error deleting user: ", utils.Err(err))
-        http.Error(w, "Error deleting user", http.StatusInternalServerError)
+        http.Error(w, fmt.Sprintf("Error deleting user: %s", err), http.StatusInternalServerError)
         return
     }
 
