@@ -126,7 +126,7 @@ func (h *UserHandler) BlockUserHandler(w http.ResponseWriter, r *http.Request) {
     err = h.UserService.BlockUser(int32(id))
     if err != nil {
         slog.Error("Error blocking user: ", utils.Err(err))
-        http.Error(w, "Error blocking user", http.StatusInternalServerError)
+        http.Error(w, fmt.Sprintf("Error blocking user: %s", err), http.StatusInternalServerError)
         return
     }
 
@@ -145,7 +145,7 @@ func (h *UserHandler) UnblockUserHandler(w http.ResponseWriter, r *http.Request)
     err = h.UserService.UnblockUser(int32(id))
     if err != nil {
         slog.Error("Error unblocking user by ID: ", utils.Err(err))
-        http.Error(w, "Error unblocking user", http.StatusInternalServerError)
+        http.Error(w, fmt.Sprintf("Error unblocking user: %s", err), http.StatusInternalServerError)
         return
     }
 
