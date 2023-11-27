@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"user-admin/internal/domain"
 	"user-admin/internal/service"
+	"user-admin/pkg/lib/utils"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -19,7 +20,7 @@ type UserHandler struct {
 func (h *UserHandler) GetAllUsersHandler(w http.ResponseWriter, r *http.Request) {
 	users, err := h.UserService.GetAllUsers()
 	if err != nil {
-		slog.Error("Error getting users: ", err)
+		slog.Error("Error getting users: ", utils.Err(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Internal Server Error"))
 		return
@@ -29,7 +30,7 @@ func (h *UserHandler) GetAllUsersHandler(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(users)
 	if err != nil {
-		slog.Error("Error encoding JSON: ", err)
+		slog.Error("Error encoding JSON: ", utils.Err(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Internal Server Error"))
 	}
@@ -45,7 +46,7 @@ func (h *UserHandler) GetUserByIDHandler(w http.ResponseWriter, r *http.Request)
 
 	user, err := h.UserService.GetUserByID(int32(id))
 	if err != nil {
-		slog.Error("Error retrieving user: ", err)
+		slog.Error("Error retrieving user: ", utils.Err(err))
 		http.Error(w, "Error retrieving user", http.StatusInternalServerError)
 		return
 	}
@@ -64,7 +65,7 @@ func (h *UserHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request) 
 
 	user, err := h.UserService.CreateUser(&createUserRequest)
 	if err != nil {
-		slog.Error("Error creating user: ", err)
+		slog.Error("Error creating user: ", utils.Err(err))
 		http.Error(w, "Error creating user", http.StatusInternalServerError)
 		return
 	}
@@ -84,7 +85,7 @@ func (h *UserHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) 
 
 	user, err := h.UserService.UpdateUser(&updateUserRequest)
 	if err != nil {
-		slog.Error("Error updating user: ", err)
+		slog.Error("Error updating user: ", utils.Err(err))
 		http.Error(w, "Error updating user", http.StatusInternalServerError)
 		return 
 	}
@@ -104,7 +105,7 @@ func (h *UserHandler) DeleteUserHandler(w http.ResponseWriter, r *http.Request) 
 
     err = h.UserService.DeleteUser(int32(id))
     if err != nil {
-        slog.Error("Error deleting user: ", err)
+        slog.Error("Error deleting user: ", utils.Err(err))
         http.Error(w, "Error deleting user", http.StatusInternalServerError)
         return
     }
@@ -123,7 +124,7 @@ func (h *UserHandler) BlockUserHandler(w http.ResponseWriter, r *http.Request) {
 
     err = h.UserService.BlockUser(int32(id))
     if err != nil {
-        slog.Error("Error blocking user: ", err)
+        slog.Error("Error blocking user: ", utils.Err(err))
         http.Error(w, "Error blocking user", http.StatusInternalServerError)
         return
     }
@@ -142,7 +143,7 @@ func (h *UserHandler) UnblockUserHandler(w http.ResponseWriter, r *http.Request)
 
     err = h.UserService.UnblockUser(int32(id))
     if err != nil {
-        slog.Error("Error unblocking user by ID: ", err)
+        slog.Error("Error unblocking user by ID: ", utils.Err(err))
         http.Error(w, "Error unblocking user", http.StatusInternalServerError)
         return
     }

@@ -22,12 +22,12 @@ func main() {
 
 	log := logger.SetupLogger(cfg.Env)
 
-	log.Info("Starting the server...", slog.String("env", cfg.Env))
-	log.Debug("Debug messages are enabled") // If env is set to prod, debug messages are going to be disabled
+	slog.Info("Starting the server...", slog.String("env", cfg.Env))
+	slog.Debug("Debug messages are enabled") // If env is set to prod, debug messages are going to be disabled
 
 	db, err := database.InitDB(cfg)
 	if err != nil {
-		log.Error("Failed to init database:", utils.Err(err))
+		slog.Error("Failed to init database:", utils.Err(err))
 		os.Exit(1)
 	}
 	defer db.Close()
@@ -55,13 +55,13 @@ func main() {
 		log.Info("Shutting down the server gracefully...")
 
 		if err := db.Close(); err != nil {
-			log.Error("Error closing database:", utils.Err(err))
+			slog.Error("Error closing database:", utils.Err(err))
 		}
 		os.Exit(0)
 	}()
 
 	err = http.ListenAndServe(":8082", userHandler.Router)
 	if err != nil {
-		log.Error("Server failed to start:", err)
+		slog.Error("Server failed to start:", utils.Err(err))
 	}
 }

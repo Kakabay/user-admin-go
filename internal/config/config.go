@@ -3,6 +3,7 @@ package config
 import (
 	"log"
 	"time"
+	"user-admin/pkg/lib/utils"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
@@ -38,7 +39,7 @@ func LoadConfig() *Config {
 	var cfg Config
 
 	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
-		log.Fatalf("Cannot read config: %v", err)
+		log.Fatalf("Cannot read config: %v", utils.Err(err))
 	}
 
 	return &cfg

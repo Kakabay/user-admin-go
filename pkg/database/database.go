@@ -3,7 +3,9 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"user-admin/internal/config"
+	"user-admin/pkg/lib/utils"
 
 	_ "github.com/lib/pq" // init postgresql driver
 )
@@ -17,11 +19,13 @@ func InitDB(cfg *config.Config) (*Database, error) {
 	
 	db, err := sql.Open("postgres", connectionString)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize database: %v", err)
+		slog.Error("failed to initialize database: %v", utils.Err(err))
+		return nil, err
 	}
 
 	if err := db.Ping(); err != nil {
-		return nil, fmt.Errorf("failed to ping database: %v", err)
+		slog.Error("failed to initialize database: %v", utils.Err(err))
+		return nil, err
 	}
 
 	return &Database{db: db}, nil

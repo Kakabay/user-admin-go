@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log/slog"
 	"strconv"
 	"strings"
@@ -26,13 +25,15 @@ func (r *PostgresUserRepository) GetAllUsers() (*domain.UsersList, error) {
 		email, profile_photo_url
 		FROM users`)
 	if err != nil {
-		return nil, fmt.Errorf("error preparing query: %v", err)
+		slog.Error("error preparing query: %v", utils.Err(err))
+		return nil, err
 	}
 	defer stmt.Close()
 
 	rows, err := stmt.QueryContext(context.TODO())
 	if err != nil {
-		return nil, fmt.Errorf("error querying users: %v", err)
+		slog.Error("error preparing query: %v", utils.Err(err))
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -47,7 +48,7 @@ func (r *PostgresUserRepository) GetAllUsers() (*domain.UsersList, error) {
 			&location, &email, &profilePhotoURL,
 		)
 		if err != nil {
-			slog.Error("Error scanning user row: %v", err)
+			slog.Error("Error scanning user row: %v", utils.Err(err))
 			return nil, err
 		}
 
@@ -69,7 +70,7 @@ func (r *PostgresUserRepository) GetAllUsers() (*domain.UsersList, error) {
 	}
 
 	if err := rows.Err(); err != nil {
-		slog.Error("Error iterating  over user rows: %v", err)
+		slog.Error("Error iterating  over user rows: %v", utils.Err(err))
 		return nil, err
 	}
 
@@ -84,7 +85,7 @@ func (r *PostgresUserRepository) GetUserByID(id int32) (*domain.GetUserResponse,
 	`)
 
 	if err != nil {
-		slog.Error("error preparing query: %v", err)
+		slog.Error("error preparing query: %v", utils.Err(err))
 		return nil, err
 	}
 	defer stmt.Close()
@@ -100,7 +101,7 @@ func (r *PostgresUserRepository) GetUserByID(id int32) (*domain.GetUserResponse,
         &email, &profilePhotoURL,
 	)
 	if err != nil {
-		slog.Error("error scanning user row: %v", err)
+		slog.Error("error scanning user row: %v", utils.Err(err))
 		return nil, err
 	}
 
@@ -118,7 +119,7 @@ func (r *PostgresUserRepository) GetUserByID(id int32) (*domain.GetUserResponse,
 		user.DateOfBirth.Day = int32(dateOfBirth.Time.Day())
 	}
 
-	return &user, err
+	return &user, nil
 }
 
 func (r *PostgresUserRepository) CreateUser(request *domain.CreateUserRequest) (*domain.CreateUserResponse, error) {
@@ -132,7 +133,8 @@ func (r *PostgresUserRepository) CreateUser(request *domain.CreateUserRequest) (
 			email, profile_photo_url
 	`)
 	if err != nil {
-		return nil, fmt.Errorf("error preparing query: %v", err)
+		slog.Error("error preparing query: %v", utils.Err(err))
+		return nil, err
 	}
 	defer stmt.Close()
 
@@ -147,7 +149,7 @@ func (r *PostgresUserRepository) CreateUser(request *domain.CreateUserRequest) (
         &user.Email, &user.ProfilePhotoURL,
     )
 	if err != nil {
-		slog.Error("error executing query: %v", err)
+		slog.Error("error executing query: %v", utils.Err(err))
 		return nil, err
 	}
 
@@ -206,7 +208,7 @@ func (r PostgresUserRepository) UpdateUser(request *domain.UpdateUserRequest) (*
 
 	stmt, err := r.DB.Prepare(updateQuery)
 	if err != nil {
-		slog.Error("error preparing query: %v", err)
+		slog.Error("error preparing query: %v", utils.Err(err))
 		return nil, err
 	}
 	defer stmt.Close()
@@ -216,7 +218,7 @@ func (r PostgresUserRepository) UpdateUser(request *domain.UpdateUserRequest) (*
         &user.ID, &user.FirstName, &user.LastName, &user.PhoneNumber, &user.Gender, &user.DateOfBirth, &user.Location, &user.Email, &user.ProfilePhotoURL,
     )
 	if err != nil {
-		slog.Error("error executing  query: %v", err)
+		slog.Error("error executing  query: %v", utils.Err(err))
 		return nil, err
 	}
 
@@ -233,7 +235,7 @@ func (r PostgresUserRepository) DeleteUser(id int32) error {
 	
 	_, err = stmt.Exec(id)
 	if err != nil {
-		slog.Error("error executing query: %v", err)
+		slog.Error("error executing query: %v", utils.Err(err))
 		return err
 	}
 
@@ -243,14 +245,14 @@ func (r PostgresUserRepository) DeleteUser(id int32) error {
 func (r *PostgresUserRepository) BlockUser(id int32) error {
     stmt, err := r.DB.Prepare("UPDATE users SET blocked = true WHERE id = $1")
     if err != nil {
-        slog.Error("error preparing query: %v", err)
+        slog.Error("error preparing query: %v", utils.Err(err))
         return err
     }
     defer stmt.Close()
 
     _, err = stmt.Exec(id)
     if err != nil {
-        slog.Error("error executing query: %v", err)
+        slog.Error("error executing query: %v", utils.Err(err))
 		return err
     }
 
@@ -260,14 +262,14 @@ func (r *PostgresUserRepository) BlockUser(id int32) error {
 func (r *PostgresUserRepository) UnblockUser(id int32) error {
     stmt, err := r.DB.Prepare("UPDATE users SET blocked = false WHERE id = $1")
     if err != nil {
-        slog.Error("error preparing query: %v", err)
+        slog.Error("error preparing query: %v", utils.Err(err))
         return err
     }
     defer stmt.Close()
 
     _, err = stmt.Exec(id)
     if err != nil {
-        slog.Error("error executing query: %v", err)
+        slog.Error("error executing query: %v", utils.Err(err))
 		return err
     }
 
