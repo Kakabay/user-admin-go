@@ -3,6 +3,7 @@ package utils
 import (
 	"database/sql"
 	"log/slog"
+	"strings"
 	"user-admin/internal/domain"
 )
 
@@ -33,4 +34,10 @@ func NullIfEmptyDate(d domain.Date) sql.NullTime {
 		return sql.NullTime{}
 	}
 	return sql.NullTime{Valid: true}
+}
+
+func IsValidPhoneNumber(phoneNumber string) bool {
+	// Check if the phone number consists of 12 digits and starts with "+993"
+	const validPrefix = "+993"
+	return len(phoneNumber) == 12 && strings.HasPrefix(phoneNumber, validPrefix)
 }
