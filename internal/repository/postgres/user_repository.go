@@ -61,7 +61,6 @@ func (r *PostgresUserRepository) GetAllUsers() (*domain.UsersList, error) {
 		user.ProfilePhotoURL = utils.HandleNullString(profilePhotoURL)
 
         if dateOfBirth.Valid {
-			// Extract year, month, and day from the Date of Birth
 			user.DateOfBirth.Year = int32(dateOfBirth.Time.Year())
 			user.DateOfBirth.Month = int32(dateOfBirth.Time.Month())
 			user.DateOfBirth.Day = int32(dateOfBirth.Time.Day())
@@ -114,7 +113,6 @@ func (r *PostgresUserRepository) GetUserByID(id int32) (*domain.GetUserResponse,
 	user.ProfilePhotoURL = utils.HandleNullString(profilePhotoURL)
 
     if dateOfBirth.Valid {
-		// Extract year, month, and day from the Date of Birth
 		user.DateOfBirth.Year = int32(dateOfBirth.Time.Year())
 		user.DateOfBirth.Month = int32(dateOfBirth.Time.Month())
 		user.DateOfBirth.Day = int32(dateOfBirth.Time.Day())
@@ -123,12 +121,14 @@ func (r *PostgresUserRepository) GetUserByID(id int32) (*domain.GetUserResponse,
 	return &user, nil
 }
 
-func (r *PostgresUserRepository) CreateUser(request *domain.CreateUserRequest) (*domain.CreateUserResponse, error) {
+func (r *PostgresUserRepository) CreateUser(request *domain.CreateUserRequest) (*domain.CreateUserResponse, error) {	
+	if !utils.IsValidPhoneNumber(request.PhoneNumber) {
+		return nil, fmt.Errorf("invalid phone number format")
+	}
 	stmt, err := r.DB.Prepare(`
-		INSERT INTO users (first_name, last_name, phone_number, blocked,
-			registration_date, gender, date_of_birth, location,
-			email, profile_photo_url)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		INSERT INTO users (first_name, last_name, phone_number,
+			gender, date_of_birth, location, email, profile_photo_url)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id, first_name, last_name, phone_number, blocked,
 			registration_date, gender, date_of_birth, location,
 			email, profile_photo_url
@@ -140,18 +140,48 @@ func (r *PostgresUserRepository) CreateUser(request *domain.CreateUserRequest) (
 	defer stmt.Close()
 
 	var user domain.CreateUserResponse
+
+	var firstName, lastName, gender, location, email, profilePhotoURL sql.NullString
+	var dateOfBirth sql.NullTime
+
 	err = stmt.QueryRow(
-		utils.NullIfEmptyStr(request.FirstName), utils.NullIfEmptyStr(request.LastName), request.PhoneNumber,
-		request.Gender, utils.NullIfEmptyDate(request.DateOfBirth), utils.NullIfEmptyStr(request.Location), // if you are able to show registration date in response, try it
-		utils.NullIfEmptyStr(request.Email), utils.NullIfEmptyStr(request.ProfilePhotoURL),
+		utils.NullIfEmptyStr(request.FirstName), 
+		utils.NullIfEmptyStr(request.LastName),
+		request.PhoneNumber, 
+		utils.NullIfEmptyStr(request.Gender),
+		utils.NullIfEmptyDate(request.DateOfBirth), 
+		utils.NullIfEmptyStr(request.Location),
+		utils.NullIfEmptyStr(request.Email), 
+		utils.NullIfEmptyStr(request.ProfilePhotoURL),
 	).Scan(
-        &user.ID, &user.FirstName, &user.LastName, &user.PhoneNumber, 
-        &user.Gender, &user.DateOfBirth, &user.Location,
-        &user.Email, &user.ProfilePhotoURL,
-    )
+		&user.ID, 
+		&firstName, 
+		&lastName, 
+		&user.PhoneNumber,
+		&user.Blocked, 
+		&user.RegistrationDate,
+		&gender, 
+		&dateOfBirth,
+		&location, 
+		&email,
+		&profilePhotoURL,
+	)
 	if err != nil {
 		slog.Error("error executing query: %v", utils.Err(err))
 		return nil, err
+	}
+
+	user.FirstName = utils.HandleNullString(firstName)
+	user.LastName = utils.HandleNullString(lastName)
+	user.Gender = utils.HandleNullString(gender)
+	user.Location = utils.HandleNullString(location)
+	user.Email = utils.HandleNullString(email)
+	user.ProfilePhotoURL = utils.HandleNullString(profilePhotoURL)
+
+	if dateOfBirth.Valid {
+		user.DateOfBirth.Year = int32(dateOfBirth.Time.Year())
+		user.DateOfBirth.Month = int32(dateOfBirth.Time.Month())
+		user.DateOfBirth.Day = int32(dateOfBirth.Time.Day())
 	}
 
 	return &user, nil

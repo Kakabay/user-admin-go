@@ -64,10 +64,15 @@ func (h *UserHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	if !utils.IsValidPhoneNumber(createUserRequest.PhoneNumber) {
+		http.Error(w, "Invalid phone number format", http.StatusBadRequest)
+		return
+	}
+
 	user, err := h.UserService.CreateUser(&createUserRequest)
 	if err != nil {
 		slog.Error("Error creating user: ", utils.Err(err))
-		http.Error(w, "Error creating user", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("error creating user: %v", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -87,7 +92,7 @@ func (h *UserHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) 
 	user, err := h.UserService.UpdateUser(&updateUserRequest)
 	if err != nil {
 		slog.Error("Error updating user: ", utils.Err(err))
-		http.Error(w, "Error updating user", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("error updating user: %v", err), http.StatusInternalServerError)
 		return 
 	}
 
@@ -107,7 +112,7 @@ func (h *UserHandler) DeleteUserHandler(w http.ResponseWriter, r *http.Request) 
     err = h.UserService.DeleteUser(int32(id))
     if err != nil {
         slog.Error("Error deleting user: ", utils.Err(err))
-        http.Error(w, fmt.Sprintf("Error deleting user: %s", err), http.StatusInternalServerError)
+        http.Error(w, fmt.Sprintf("error deleting user: %s", err), http.StatusInternalServerError)
         return
     }
 
@@ -126,7 +131,7 @@ func (h *UserHandler) BlockUserHandler(w http.ResponseWriter, r *http.Request) {
     err = h.UserService.BlockUser(int32(id))
     if err != nil {
         slog.Error("Error blocking user: ", utils.Err(err))
-        http.Error(w, fmt.Sprintf("Error blocking user: %s", err), http.StatusInternalServerError)
+        http.Error(w, fmt.Sprintf("error blocking user: %s", err), http.StatusInternalServerError)
         return
     }
 
@@ -145,7 +150,7 @@ func (h *UserHandler) UnblockUserHandler(w http.ResponseWriter, r *http.Request)
     err = h.UserService.UnblockUser(int32(id))
     if err != nil {
         slog.Error("Error unblocking user by ID: ", utils.Err(err))
-        http.Error(w, fmt.Sprintf("Error unblocking user: %s", err), http.StatusInternalServerError)
+        http.Error(w, fmt.Sprintf("error unblocking user: %s", err), http.StatusInternalServerError)
         return
     }
 
