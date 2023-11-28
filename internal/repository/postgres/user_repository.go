@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"strconv"
 	"strings"
+	"time"
 	"user-admin/internal/domain"
 	"user-admin/pkg/lib/utils"
 )
@@ -214,7 +215,16 @@ func (r PostgresUserRepository) UpdateUser(request *domain.UpdateUserRequest) (*
 
 	if request.DateOfBirth.Year != 0 || request.DateOfBirth.Month != 0 || request.DateOfBirth.Day != 0 {
 		queryArgs = append(queryArgs, "date_of_birth = $"+strconv.Itoa(len(queryParams)+1))
-		queryParams = append(queryParams, request.DateOfBirth)
+
+		// Construct time.Time from individual components
+		dob := time.Date(
+			int(request.DateOfBirth.Year),
+			time.Month(request.DateOfBirth.Month),
+			int(request.DateOfBirth.Day),
+			0, 0, 0, 0,
+			time.UTC,
+		)
+		queryParams = append(queryParams, dob)
 	}
 
 	if request.Location != "" {
@@ -235,7 +245,7 @@ func (r PostgresUserRepository) UpdateUser(request *domain.UpdateUserRequest) (*
 	updateQuery += " " + strings.Join(queryArgs, ", ") + " WHERE id = $" + strconv.Itoa(len(queryParams)+1)
 	queryParams = append(queryParams, request.ID)
 
-	updateQuery += " RETURNING id, first_name, last_name, phone_number, gender, date_of_birth, location, email, profile_photo_url"
+	updateQuery += " RETURNING id, first_name, last_name, phone_number, blocked, gender, registration_date, date_of_birth, location, email, profile_photo_url"
 
 	stmt, err := r.DB.Prepare(updateQuery)
 	if err != nil {
@@ -245,13 +255,39 @@ func (r PostgresUserRepository) UpdateUser(request *domain.UpdateUserRequest) (*
 	defer stmt.Close()
 
 	var user domain.UpdateUserResponse
+	var firstName, lastName, gender, location, email, profilePhotoURL sql.NullString
+	var dateOfBirth sql.NullTime
+
 	err = stmt.QueryRow(queryParams...).Scan(
-        &user.ID, &user.FirstName, &user.LastName, &user.PhoneNumber, &user.Gender, &user.DateOfBirth, &user.Location, &user.Email, &user.ProfilePhotoURL,
+        &user.ID, 
+		&firstName, 
+		&lastName, 
+		&user.PhoneNumber, 
+		&user.Blocked, 
+		&gender, 
+		&user.RegistrationDate, 
+		&dateOfBirth, 
+		&location, 
+		&email, 
+		&profilePhotoURL,
     )
 	if err != nil {
 		slog.Error("error executing  query: %v", utils.Err(err))
 		return nil, err
 	}
+
+	user.FirstName = utils.HandleNullString(firstName)
+	user.LastName = utils.HandleNullString(lastName)
+	user.Gender = utils.HandleNullString(gender)
+	user.Location = utils.HandleNullString(location)
+	user.Email = utils.HandleNullString(email)
+	user.ProfilePhotoURL = utils.HandleNullString(profilePhotoURL)
+
+	if dateOfBirth.Valid {
+    	user.DateOfBirth.Year = int32(dateOfBirth.Time.Year())
+    	user.DateOfBirth.Month = int32(dateOfBirth.Time.Month())
+    	user.DateOfBirth.Day = int32(dateOfBirth.Time.Day())
+}
 
 	return &user, nil
 }

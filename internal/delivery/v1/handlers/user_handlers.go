@@ -82,12 +82,22 @@ func (h *UserHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *UserHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
 	var updateUserRequest domain.UpdateUserRequest
-	err := json.NewDecoder(r.Body).Decode(&updateUserRequest)
+
+	err = json.NewDecoder(r.Body).Decode(&updateUserRequest)
 	if err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+
+	updateUserRequest.ID = int32(id)
 
 	user, err := h.UserService.UpdateUser(&updateUserRequest)
 	if err != nil {
