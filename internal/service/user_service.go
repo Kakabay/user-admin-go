@@ -13,8 +13,8 @@ func NewUserService(userRepository repository.UserRepository) *UserService {
 	return &UserService{UserRepository: userRepository}
 }
 
-func (s *UserService) GetAllUsers() (*domain.UsersList, error) {
-	return s.UserRepository.GetAllUsers()
+func (s *UserService) GetAllUsers(page, pageSize int) (*domain.UsersList, error) {
+	return s.UserRepository.GetAllUsers(page, pageSize)
 }
 
 func (s *UserService) GetUserByID(id int32) (*domain.GetUserResponse, error) {

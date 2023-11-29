@@ -20,63 +20,78 @@ func NewPostgresUserRepository(db *sql.DB) *PostgresUserRepository{
 	return &PostgresUserRepository{DB: db}
 }
 
-func (r *PostgresUserRepository) GetAllUsers() (*domain.UsersList, error) {
-	stmt, err := r.DB.Prepare(`
-		SELECT id, first_name, last_name, phone_number, blocked, 
-		registration_date, gender, date_of_birth, location, 
-		email, profile_photo_url
-		FROM users`)
-	if err != nil {
-		slog.Error("error preparing query: %v", utils.Err(err))
-		return nil, err
-	}
-	defer stmt.Close()
+func (r *PostgresUserRepository) GetAllUsers(page, pageSize int) (*domain.UsersList, error) {
+    offset := (page - 1) * pageSize
 
-	rows, err := stmt.QueryContext(context.TODO())
-	if err != nil {
-		slog.Error("error preparing query: %v", utils.Err(err))
-		return nil, err
-	}
-	defer rows.Close()
+    query := `
+        SELECT id, first_name, last_name, phone_number, blocked,
+        registration_date, gender, date_of_birth, location,
+        email, profile_photo_url
+        FROM users
+        ORDER BY id
+        LIMIT $1 OFFSET $2
+    `
+    stmt, err := r.DB.Prepare(query)
+    if err != nil {
+        slog.Error("Error preparing query: %v", utils.Err(err))
+        return nil, err
+    }
+    defer stmt.Close()
 
-	var userList domain.UsersList
-	for rows.Next() {
-		var user domain.CommonUserResponse
-        var firstName, lastName,  gender, location, email, profilePhotoURL sql.NullString
-        var dateOfBirth sql.NullTime
-		err := rows.Scan(
-			&user.ID, &firstName, &lastName, &user.PhoneNumber, &user.Blocked,
-			&user.RegistrationDate, &gender, &dateOfBirth, 
-			&location, &email, &profilePhotoURL,
-		)
-		if err != nil {
-			slog.Error("Error scanning user row: %v", utils.Err(err))
-			return nil, err
-		}
+    rows, err := stmt.QueryContext(context.TODO(), pageSize, offset)
+    if err != nil {
+        slog.Error("Error executing query: %v", utils.Err(err))
+        return nil, err
+    }
+    defer rows.Close()
 
-		user.FirstName = utils.HandleNullString(firstName)
-		user.LastName = utils.HandleNullString(lastName)
-		user.Gender = utils.HandleNullString(gender)
-		user.Location = utils.HandleNullString(location)
-		user.Email = utils.HandleNullString(email)
-		user.ProfilePhotoURL = utils.HandleNullString(profilePhotoURL)
+    userList := domain.UsersList{Users: make([]domain.CommonUserResponse, 0)}
+    for rows.Next() {
+        user, err := scanUserRow(rows)
+        if err != nil {
+            return nil, err
+        }
+        userList.Users = append(userList.Users, user)
+    }
 
-        if dateOfBirth.Valid {
-			user.DateOfBirth.Year = int32(dateOfBirth.Time.Year())
-			user.DateOfBirth.Month = int32(dateOfBirth.Time.Month())
-			user.DateOfBirth.Day = int32(dateOfBirth.Time.Day())
-		}
+    if err := rows.Err(); err != nil {
+        slog.Error("Error iterating over user rows: %v", utils.Err(err))
+        return nil, err
+    }
 
-		userList.Users = append(userList.Users, user)
-	}
-
-	if err := rows.Err(); err != nil {
-		slog.Error("Error iterating  over user rows: %v", utils.Err(err))
-		return nil, err
-	}
-
-	return &userList, nil
+    return &userList, nil
 }
+
+func scanUserRow(rows *sql.Rows) (domain.CommonUserResponse, error) {
+    var user domain.CommonUserResponse
+    var firstName, lastName, gender, location, email, profilePhotoURL sql.NullString
+    var dateOfBirth sql.NullTime
+
+    if err := rows.Scan(
+        &user.ID, &firstName, &lastName, &user.PhoneNumber, &user.Blocked,
+        &user.RegistrationDate, &gender, &dateOfBirth,
+        &location, &email, &profilePhotoURL,
+    ); err != nil {
+        slog.Error("Error scanning user row: %v", utils.Err(err))
+        return domain.CommonUserResponse{}, err
+    }
+
+    user.FirstName = utils.HandleNullString(firstName)
+    user.LastName = utils.HandleNullString(lastName)
+    user.Gender = utils.HandleNullString(gender)
+    user.Location = utils.HandleNullString(location)
+    user.Email = utils.HandleNullString(email)
+    user.ProfilePhotoURL = utils.HandleNullString(profilePhotoURL)
+
+    if dateOfBirth.Valid {
+        user.DateOfBirth.Year = int32(dateOfBirth.Time.Year())
+        user.DateOfBirth.Month = int32(dateOfBirth.Time.Month())
+        user.DateOfBirth.Day = int32(dateOfBirth.Time.Day())
+    }
+
+    return user, nil
+}
+
 
 func (r *PostgresUserRepository) GetUserByID(id int32) (*domain.GetUserResponse, error) {
 	stmt, err := r.DB.Prepare(`

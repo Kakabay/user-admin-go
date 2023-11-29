@@ -19,23 +19,46 @@ type UserHandler struct {
 }
 
 func (h *UserHandler) GetAllUsersHandler(w http.ResponseWriter, r *http.Request) {
-	users, err := h.UserService.GetAllUsers()
-	if err != nil {
-		slog.Error("Error getting users: ", utils.Err(err))
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Internal Server Error"))
-		return
-	}
+    page, err := strconv.Atoi(r.URL.Query().Get("page"))
+    if err != nil || page <= 0 {
+        page = 1
+    }
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(users)
-	if err != nil {
-		slog.Error("Error encoding JSON: ", utils.Err(err))
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Internal Server Error"))
-	}
+    pageSize, err := strconv.Atoi(r.URL.Query().Get("pageSize"))
+    if err != nil || pageSize <= 0 {
+        pageSize = 12 // Default page size
+    }
+
+    users, err := h.UserService.GetAllUsers(page, pageSize)
+    if err != nil {
+        slog.Error("Error getting users: ", utils.Err(err))
+        respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+        return
+    }
+
+    // Calculate previous and next pages
+    previousPage := page - 1
+    if previousPage < 1 {
+        previousPage = 1
+    }
+
+    nextPage := page + 1
+
+    response := struct {
+        Users       *domain.UsersList `json:"users"`
+        CurrentPage int               `json:"currentPage"`
+        PrevPage    int               `json:"previousPage"`
+        NextPage    int               `json:"nextPage"`
+    }{
+        Users:       users,
+        CurrentPage: page,
+        PrevPage:    previousPage,
+        NextPage:    nextPage,
+    }
+
+    respondWithJSON(w, http.StatusOK, response)
 }
+
 
 func (h *UserHandler) GetUserByIDHandler(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
@@ -166,4 +189,18 @@ func (h *UserHandler) UnblockUserHandler(w http.ResponseWriter, r *http.Request)
 
     w.WriteHeader(http.StatusOK)
     w.Write([]byte("User unblocked successfully"))
+}
+
+func respondWithError(w http.ResponseWriter, code int, message string) {
+    w.WriteHeader(code)
+    w.Write([]byte(message))
+}
+
+func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(code)
+    if err := json.NewEncoder(w).Encode(payload); err != nil {
+        slog.Error("Error encoding JSON: ", utils.Err(err))
+        respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+    }
 }
