@@ -26,13 +26,13 @@ func (h *UserHandler) GetAllUsersHandler(w http.ResponseWriter, r *http.Request)
 
     pageSize, err := strconv.Atoi(r.URL.Query().Get("pageSize"))
     if err != nil || pageSize <= 0 {
-        pageSize = 12 // Default page size
+        pageSize = 8 // Default page size
     }
 
     users, err := h.UserService.GetAllUsers(page, pageSize)
     if err != nil {
         slog.Error("Error getting users: ", utils.Err(err))
-        respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+        utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
         return
     }
 
@@ -56,9 +56,8 @@ func (h *UserHandler) GetAllUsersHandler(w http.ResponseWriter, r *http.Request)
         NextPage:    nextPage,
     }
 
-    respondWithJSON(w, http.StatusOK, response)
+    utils.RespondWithJSON(w, http.StatusOK, response)
 }
-
 
 func (h *UserHandler) GetUserByIDHandler(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
@@ -189,18 +188,4 @@ func (h *UserHandler) UnblockUserHandler(w http.ResponseWriter, r *http.Request)
 
     w.WriteHeader(http.StatusOK)
     w.Write([]byte("User unblocked successfully"))
-}
-
-func respondWithError(w http.ResponseWriter, code int, message string) {
-    w.WriteHeader(code)
-    w.Write([]byte(message))
-}
-
-func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(code)
-    if err := json.NewEncoder(w).Encode(payload); err != nil {
-        slog.Error("Error encoding JSON: ", utils.Err(err))
-        respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
-    }
 }
