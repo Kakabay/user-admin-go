@@ -40,3 +40,7 @@ func (s *UserService) BlockUser(id int32) error {
 func (s *UserService) UnblockUser(id int32) error {
 	return s.UserRepository.UnblockUser(id)
 }
+
+func (s *UserService) SearchUsers(query string, page, pageSize int) (*domain.UsersList, error) {
+	return s.UserRepository.SearchUsers(query, page, pageSize)
+}

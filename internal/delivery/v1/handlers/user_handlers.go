@@ -189,3 +189,52 @@ func (h *UserHandler) UnblockUserHandler(w http.ResponseWriter, r *http.Request)
     w.WriteHeader(http.StatusOK)
     w.Write([]byte("User unblocked successfully"))
 }
+
+func (h *UserHandler) SearchUsersHandler(w http.ResponseWriter, r *http.Request) {
+    query := r.URL.Query().Get("query")
+    if query == "" {
+        utils.RespondWithError(w, http.StatusBadRequest, "Search query is required")
+        return
+    }
+
+    // Retrieve pagination parameters
+    page, err := strconv.Atoi(r.URL.Query().Get("page"))
+    if err != nil || page <= 0 {
+        page = 1
+    }
+
+    pageSize, err := strconv.Atoi(r.URL.Query().Get("pageSize"))
+    if err != nil || pageSize <= 0 {
+        pageSize = 8 // Default page size
+    }
+
+    // Call the UserService method to search users
+    users, err := h.UserService.SearchUsers(query, page, pageSize)
+    if err != nil {
+        slog.Error("Error searching users: ", utils.Err(err))
+        utils.RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+        return
+    }
+
+    previousPage := page - 1
+    if previousPage < 1 {
+        previousPage = 1
+    }
+
+    nextPage := page + 1
+
+    response := struct {
+        Users       *domain.UsersList `json:"users"`
+        CurrentPage int               `json:"currentPage"`
+        PrevPage    int               `json:"previousPage"`
+        NextPage    int               `json:"nextPage"`
+    }{
+        Users:       users,
+        CurrentPage: page,
+        PrevPage:    previousPage,
+        NextPage:    nextPage,
+    }
+
+    // Respond with the JSON
+    utils.RespondWithJSON(w, http.StatusOK, response)
+}

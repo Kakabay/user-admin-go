@@ -10,4 +10,5 @@ type UserRepository interface {
 	DeleteUser(id int32) error
 	BlockUser(id int32) error
 	UnblockUser(id int32) error
+	SearchUsers(query string, page, pageSize int) (*domain.UsersList, error)
 }

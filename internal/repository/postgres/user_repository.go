@@ -379,3 +379,46 @@ func (r *PostgresUserRepository) UnblockUser(id int32) error {
 
     return nil
 }
+func (r *PostgresUserRepository) SearchUsers(query string, page, pageSize int) (*domain.UsersList, error) {
+    offset := (page - 1) * pageSize
+
+    searchQuery := `
+        SELECT id, first_name, last_name, phone_number, blocked,
+        registration_date, gender, date_of_birth, location,
+        email, profile_photo_url
+        FROM users
+        WHERE first_name ILIKE $1 OR last_name OR phone_number OR email ILIKE $1
+        ORDER BY id
+        LIMIT $2 OFFSET $3
+    `
+
+    stmt, err := r.DB.Prepare(searchQuery)
+    if err != nil {
+        slog.Error("Error preparing search query: %v", utils.Err(err))
+        return nil, err
+    }
+    defer stmt.Close()
+
+    rows, err := stmt.QueryContext(context.TODO(), "%"+query+"%", pageSize, offset)
+    if err != nil {
+        slog.Error("Error executing search query: %v", utils.Err(err))
+        return nil, err
+    }
+    defer rows.Close()
+
+    userList := domain.UsersList{Users: make([]domain.CommonUserResponse, 0)}
+    for rows.Next() {
+        user, err := scanUserRow(rows)
+        if err != nil {
+            return nil, err
+        }
+        userList.Users = append(userList.Users, user)
+    }
+
+    if err := rows.Err(); err != nil {
+        slog.Error("Error iterating over user rows: %v", utils.Err(err))
+        return nil, err
+    }
+
+    return &userList, nil
+}
