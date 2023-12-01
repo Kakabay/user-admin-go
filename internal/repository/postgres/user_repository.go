@@ -379,6 +379,7 @@ func (r *PostgresUserRepository) UnblockUser(id int32) error {
 
     return nil
 }
+
 func (r *PostgresUserRepository) SearchUsers(query string, page, pageSize int) (*domain.UsersList, error) {
     offset := (page - 1) * pageSize
 
@@ -387,7 +388,7 @@ func (r *PostgresUserRepository) SearchUsers(query string, page, pageSize int) (
         registration_date, gender, date_of_birth, location,
         email, profile_photo_url
         FROM users
-        WHERE first_name ILIKE $1 OR last_name OR phone_number OR email ILIKE $1
+        WHERE first_name ILIKE $1 OR last_name ILIKE $1 OR phone_number ILIKE $1 OR email ILIKE $1
         ORDER BY id
         LIMIT $2 OFFSET $3
     `
