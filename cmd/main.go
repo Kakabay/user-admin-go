@@ -46,6 +46,7 @@ func main() {
 	userHandler.Router.Delete("/user/{id}", userHandler.DeleteUserHandler)
 	userHandler.Router.Post("/user/{id}/block", userHandler.BlockUserHandler)
 	userHandler.Router.Post("/user/{id}/unblock", userHandler.UnblockUserHandler)
+	userHandler.Router.Get("/user/search", userHandler.SearchUsersHandler)
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
