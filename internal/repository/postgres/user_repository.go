@@ -47,7 +47,7 @@ func (r *PostgresUserRepository) GetAllUsers(page, pageSize int) (*domain.UsersL
 
     userList := domain.UsersList{Users: make([]domain.CommonUserResponse, 0)}
     for rows.Next() {
-        user, err := scanUserRow(rows)
+        user, err := utils.ScanUserRow(rows)
         if err != nil {
             return nil, err
         }
@@ -61,37 +61,6 @@ func (r *PostgresUserRepository) GetAllUsers(page, pageSize int) (*domain.UsersL
 
     return &userList, nil
 }
-
-func scanUserRow(rows *sql.Rows) (domain.CommonUserResponse, error) {
-    var user domain.CommonUserResponse
-    var firstName, lastName, gender, location, email, profilePhotoURL sql.NullString
-    var dateOfBirth sql.NullTime
-
-    if err := rows.Scan(
-        &user.ID, &firstName, &lastName, &user.PhoneNumber, &user.Blocked,
-        &user.RegistrationDate, &gender, &dateOfBirth,
-        &location, &email, &profilePhotoURL,
-    ); err != nil {
-        slog.Error("Error scanning user row: %v", utils.Err(err))
-        return domain.CommonUserResponse{}, err
-    }
-
-    user.FirstName = utils.HandleNullString(firstName)
-    user.LastName = utils.HandleNullString(lastName)
-    user.Gender = utils.HandleNullString(gender)
-    user.Location = utils.HandleNullString(location)
-    user.Email = utils.HandleNullString(email)
-    user.ProfilePhotoURL = utils.HandleNullString(profilePhotoURL)
-
-    if dateOfBirth.Valid {
-        user.DateOfBirth.Year = int32(dateOfBirth.Time.Year())
-        user.DateOfBirth.Month = int32(dateOfBirth.Time.Month())
-        user.DateOfBirth.Day = int32(dateOfBirth.Time.Day())
-    }
-
-    return user, nil
-}
-
 
 func (r *PostgresUserRepository) GetUserByID(id int32) (*domain.GetUserResponse, error) {
 	stmt, err := r.DB.Prepare(`
@@ -409,7 +378,7 @@ func (r *PostgresUserRepository) SearchUsers(query string, page, pageSize int) (
 
     userList := domain.UsersList{Users: make([]domain.CommonUserResponse, 0)}
     for rows.Next() {
-        user, err := scanUserRow(rows)
+        user, err := utils.ScanUserRow(rows)
         if err != nil {
             return nil, err
         }
