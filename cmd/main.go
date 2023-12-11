@@ -32,10 +32,12 @@ func main() {
 	}
 	defer db.Close()
 
+	mainRouter := chi.NewRouter()
+
 	userRepository := repository.NewPostgresUserRepository(db.GetDB())
 	userService := service.NewUserService(userRepository)
 	userHandler := handlers.UserHandler{
-		UserService: userService, 
+		UserService: userService,
 		Router: chi.NewRouter(),
 	}
 
@@ -47,6 +49,18 @@ func main() {
 	userHandler.Router.Post("/user/{id}/block", userHandler.BlockUserHandler)
 	userHandler.Router.Post("/user/{id}/unblock", userHandler.UnblockUserHandler)
 	userHandler.Router.Get("/user/search", userHandler.SearchUsersHandler)
+
+	adminAuthRepository := repository.NewPostgresAdminAuthRepository(db.GetDB(), cfg.JWT)
+	adminAuthService := service.NewAdminAuthService(adminAuthRepository)
+	authHandler := handlers.AdminAuthHandler{
+		AdminAuthService: *adminAuthService,
+		Router: chi.NewRouter(),
+	}
+
+	authHandler.Router.Post("/login", authHandler.LoginHandler)
+
+	mainRouter.Mount("/api", userHandler.Router)
+	mainRouter.Mount("/auth", authHandler.Router)
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
@@ -61,7 +75,7 @@ func main() {
 		os.Exit(0)
 	}()
 
-	err = http.ListenAndServe(":8082", userHandler.Router)
+	err = http.ListenAndServe(":8082", mainRouter)
 	if err != nil {
 		slog.Error("Server failed to start:", utils.Err(err))
 	}
