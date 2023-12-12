@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 	"user-admin/internal/domain"
+	"user-admin/pkg/lib/utils"
 
 	"user-admin/internal/config"
 
@@ -56,7 +57,7 @@ func (r *PostgresAdminAuthRepository) GenerateJWT(adminID int32) (string, error)
 
 	tokenString, err := token.SignedString([]byte(r.JWTConfig.SecretKey))
 	if err != nil {
-		slog.Error("Error generating JWT: %v", err)
+		slog.Error("Error generating JWT: %v", utils.Err(err))
 		return "", err
 	}
 

@@ -23,13 +23,11 @@ type LoginResponse struct {
 	Token string `json:"token"`
 }
 
-// ErrorResponse represents the structure of an error response.
 type ErrorResponse struct {
 	Status  int    `json:"status"`
 	Message string `json:"message"`
 }
 
-// SuccessResponse represents the structure of a success response.
 type SuccessResponse struct {
 	Status int         `json:"status"`
 	Data   interface{} `json:"data"`
@@ -45,12 +43,10 @@ func (h *AdminAuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) 
 	token, err := h.AdminAuthService.LoginAdmin(loginRequest.Username, loginRequest.Password)
 	if err != nil {
 		if err == domain.ErrAdminNotFound {
-			// Handle case where admin/user was not found
 			Error(w, http.StatusNotFound, "User not found")
 			return
 		}
 
-		// Handle other errors
 		Error(w, http.StatusUnauthorized, "Invalid credentials")
 		return
 	}
