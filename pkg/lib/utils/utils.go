@@ -9,7 +9,6 @@ import (
 	"user-admin/internal/domain"
 )
 
-// Use slog to handle errors
 func Err(err error) slog.Attr {
     return slog.Attr{
         Key:   "error",
@@ -95,4 +94,3 @@ func ScanUserRow(rows *sql.Rows) (domain.CommonUserResponse, error) {
 
     return user, nil
 }
-
