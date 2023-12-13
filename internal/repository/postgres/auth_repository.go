@@ -50,7 +50,7 @@ func (r *PostgresAdminAuthRepository) GetAdminByUsername(username string) (*doma
 func (r *PostgresAdminAuthRepository) GenerateJWT(adminID int32) (string, error) {
 	claims := jwt.MapClaims{
 		"id": adminID,
-		"exp": time.Now().Add(time.Hour * 1).Unix(), // Token expiration time
+		"exp": time.Now().Add(time.Minute * 30).Unix(), // Token expiration time
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -66,7 +66,7 @@ func (r *PostgresAdminAuthRepository) GenerateJWT(adminID int32) (string, error)
 
 func (r *PostgresAdminAuthRepository) ValidateJWT(tokenString string) (int32, error) {
     token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-        if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
+        if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
             return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
         }
         return []byte(r.JWTConfig.SecretKey), nil
