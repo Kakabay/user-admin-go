@@ -2,7 +2,6 @@ package repository
 
 import (
 	"database/sql"
-	"fmt"
 	"log/slog"
 	"time"
 	"user-admin/internal/domain"
@@ -24,7 +23,7 @@ func NewPostgresAdminAuthRepository(db *sql.DB, jwtConfig config.JWT) *PostgresA
 
 func (r *PostgresAdminAuthRepository) GetAdminByUsername(username string) (*domain.Admin, error) {
 	query := `
-		SELECT id, username, password
+		SELECT id, username, password, role
 		FROM admins
 		WHERE username = $1
 		LIMIT 1
@@ -34,7 +33,7 @@ func (r *PostgresAdminAuthRepository) GetAdminByUsername(username string) (*doma
 
 	var admin domain.Admin
 
-	err := row.Scan(&admin.ID, &admin.Username, &admin.Password)
+	err := row.Scan(&admin.ID, &admin.Username, &admin.Password, &admin.Roles)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, domain.ErrAdminNotFound
@@ -47,10 +46,11 @@ func (r *PostgresAdminAuthRepository) GetAdminByUsername(username string) (*doma
 	return &admin, nil
 }
 
-func (r *PostgresAdminAuthRepository) GenerateJWT(adminID int32) (string, error) {
+func (r *PostgresAdminAuthRepository) GenerateJWT(admin *domain.Admin) (string, error) {
 	claims := jwt.MapClaims{
-		"id": adminID,
-		"exp": time.Now().Add(time.Minute * 30).Unix(), // Token expiration time
+		"id": admin.ID,
+		"role": admin.Roles,
+		"exp": time.Now().Add(30 * time.Minute).Unix(), // Token expiration time
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -62,31 +62,4 @@ func (r *PostgresAdminAuthRepository) GenerateJWT(adminID int32) (string, error)
 	}
 
 	return tokenString, nil
-}
-
-func (r *PostgresAdminAuthRepository) ValidateJWT(tokenString string) (int32, error) {
-    token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-        if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-            return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-        }
-        return []byte(r.JWTConfig.SecretKey), nil
-    })
-
-    if err != nil {
-		slog.Error("Error validating JWT: %v", err)
-        return 0, err
-    }
-
-    if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-        adminID, ok := claims["id"].(float64)
-        if !ok {
-			slog.Error("invalid ID claim in JWT")
-            return 0, fmt.Errorf("invalid ID claim in JWT")
-        }
-
-        return int32(adminID), nil
-    }
-
-	slog.Error("invalid JWT token")
-    return 0, fmt.Errorf("invalid JWT token")
 }
