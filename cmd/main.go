@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"user-admin/internal/config"
 	handlers "user-admin/internal/delivery/v1/handlers"
+	"user-admin/internal/delivery/v1/middleware"
 	repository "user-admin/internal/repository/postgres"
 	"user-admin/internal/service"
 	database "user-admin/pkg/database"
@@ -34,33 +35,44 @@ func main() {
 
 	mainRouter := chi.NewRouter()
 
-	userRepository := repository.NewPostgresUserRepository(db.GetDB())
-	userService := service.NewUserService(userRepository)
-	userHandler := handlers.UserHandler{
-		UserService: userService,
-		Router: chi.NewRouter(),
-	}
-
-	userHandler.Router.Get("/user", userHandler.GetAllUsersHandler)
-	userHandler.Router.Get("/user/{id}", userHandler.GetUserByIDHandler)
-	userHandler.Router.Post("/user", userHandler.CreateUserHandler)
-	userHandler.Router.Post("/user/{id}", userHandler.UpdateUserHandler)
-	userHandler.Router.Delete("/user/{id}", userHandler.DeleteUserHandler)
-	userHandler.Router.Post("/user/{id}/block", userHandler.BlockUserHandler)
-	userHandler.Router.Post("/user/{id}/unblock", userHandler.UnblockUserHandler)
-	userHandler.Router.Get("/user/search", userHandler.SearchUsersHandler)
-
 	adminAuthRepository := repository.NewPostgresAdminAuthRepository(db.GetDB(), cfg.JWT)
 	adminAuthService := service.NewAdminAuthService(adminAuthRepository)
 	authHandler := handlers.AdminAuthHandler{
 		AdminAuthService: *adminAuthService,
-		Router: chi.NewRouter(),
+		Router:           chi.NewRouter(),
 	}
 
 	authHandler.Router.Post("/login", authHandler.LoginHandler)
 
-	mainRouter.Mount("/api", userHandler.Router)
-	mainRouter.Mount("/auth", authHandler.Router)
+	var requiredRoles = []string{"admin", "super_admin"}
+
+	mainRouter.Use(middleware.AuthorizationMiddleware(cfg, requiredRoles))
+
+	// Group the "/api" routes
+	mainRouter.Route("/api", func(r chi.Router) {
+		userRepository := repository.NewPostgresUserRepository(db.GetDB())
+		userService := service.NewUserService(userRepository)
+		userHandler := handlers.UserHandler{
+			UserService: userService,
+			Router:      chi.NewRouter(),
+		}
+
+		userHandler.Router.Get("/", userHandler.GetAllUsersHandler)
+		userHandler.Router.Get("/{id}", userHandler.GetUserByIDHandler)
+		userHandler.Router.Post("/", userHandler.CreateUserHandler)
+		userHandler.Router.Post("/{id}", userHandler.UpdateUserHandler)
+		userHandler.Router.Delete("/{id}", userHandler.DeleteUserHandler)
+		userHandler.Router.Post("/{id}/block", userHandler.BlockUserHandler)
+		userHandler.Router.Post("/{id}/unblock", userHandler.UnblockUserHandler)
+		userHandler.Router.Get("/search", userHandler.SearchUsersHandler)
+
+		r.Mount("/user", userHandler.Router)
+	})
+
+	// Group the "/auth" routes
+	mainRouter.Route("/auth", func(r chi.Router) {
+		r.Mount("/", authHandler.Router)
+	})
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
