@@ -35,44 +35,42 @@ func main() {
 
 	mainRouter := chi.NewRouter()
 
+	authRouter := chi.NewRouter()
+	mainRouter.Route("/auth", func(r chi.Router) {
+		r.Mount("/", authRouter)
+	})
+
 	adminAuthRepository := repository.NewPostgresAdminAuthRepository(db.GetDB(), cfg.JWT)
 	adminAuthService := service.NewAdminAuthService(adminAuthRepository)
 	authHandler := handlers.AdminAuthHandler{
 		AdminAuthService: *adminAuthService,
-		Router:           chi.NewRouter(),
+		Router:           authRouter,
 	}
 
-	authHandler.Router.Post("/login", authHandler.LoginHandler)
+	authRouter.Post("/login", authHandler.LoginHandler)
 
-	var requiredRoles = []string{"admin", "super_admin"}
-
-	mainRouter.Use(middleware.AuthorizationMiddleware(cfg, requiredRoles))
-
-	// Group the "/api" routes
-	mainRouter.Route("/api", func(r chi.Router) {
-		userRepository := repository.NewPostgresUserRepository(db.GetDB())
-		userService := service.NewUserService(userRepository)
-		userHandler := handlers.UserHandler{
-			UserService: userService,
-			Router:      chi.NewRouter(),
-		}
-
-		userHandler.Router.Get("/", userHandler.GetAllUsersHandler)
-		userHandler.Router.Get("/{id}", userHandler.GetUserByIDHandler)
-		userHandler.Router.Post("/", userHandler.CreateUserHandler)
-		userHandler.Router.Post("/{id}", userHandler.UpdateUserHandler)
-		userHandler.Router.Delete("/{id}", userHandler.DeleteUserHandler)
-		userHandler.Router.Post("/{id}/block", userHandler.BlockUserHandler)
-		userHandler.Router.Post("/{id}/unblock", userHandler.UnblockUserHandler)
-		userHandler.Router.Get("/search", userHandler.SearchUsersHandler)
-
-		r.Mount("/user", userHandler.Router)
+	// Applying AuthorizationMiddleware to the user-related routes, excluding /login
+	userRouter := chi.NewRouter()
+	userRouter.Use(middleware.AuthorizationMiddleware(cfg, []string{"admin", "super_admin"}))
+	mainRouter.Route("/api/user", func(r chi.Router) {
+		r.Mount("/", userRouter)
 	})
 
-	// Group the "/auth" routes
-	mainRouter.Route("/auth", func(r chi.Router) {
-		r.Mount("/", authHandler.Router)
-	})
+	userRepository := repository.NewPostgresUserRepository(db.GetDB())
+	userService := service.NewUserService(userRepository)
+	userHandler := handlers.UserHandler{
+		UserService: userService,
+		Router:      userRouter,
+	}
+
+	userRouter.Get("/", userHandler.GetAllUsersHandler)
+	userRouter.Get("/{id}", userHandler.GetUserByIDHandler)
+	userRouter.Post("/", userHandler.CreateUserHandler)
+	userRouter.Post("/{id}", userHandler.UpdateUserHandler)
+	userRouter.Delete("/{id}", userHandler.DeleteUserHandler)
+	userRouter.Post("/{id}/block", userHandler.BlockUserHandler)
+	userRouter.Post("/{id}/unblock", userHandler.UnblockUserHandler)
+	userRouter.Get("/search", userHandler.SearchUsersHandler)
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
