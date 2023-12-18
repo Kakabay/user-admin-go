@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 	"user-admin/internal/domain"
 	"user-admin/internal/service"
 
@@ -22,7 +21,6 @@ type LoginRequest struct {
 
 type LoginResponse struct {
 	Token string `json:"token"`
-	Cookie string `json:"-"`
 }
 
 type ErrorResponse struct {
@@ -53,18 +51,8 @@ func (h *AdminAuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) 
         return
     }
 
-    // Set the cookie in the response
-    cookie := &http.Cookie{
-        Name:     "jwt_token",
-        Value:    token,
-        Path:     "/",
-        MaxAge:   int(time.Minute * 30),
-        HttpOnly: true,
-    }
-
-	http.SetCookie(w, cookie)
-
-    Success(w, http.StatusOK)
+	loginResponse := LoginResponse{Token: token}
+    respondJSON(w, http.StatusOK, loginResponse)
 }
 
 func Error(w http.ResponseWriter, status int, message string) {
@@ -75,7 +63,8 @@ func Error(w http.ResponseWriter, status int, message string) {
 	json.NewEncoder(w).Encode(errResponse)
 }
 
-func Success(w http.ResponseWriter, status int) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
+func respondJSON(w http.ResponseWriter, status int, data interface{}) {
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(status)
+    json.NewEncoder(w).Encode(data)
 }

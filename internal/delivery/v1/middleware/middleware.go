@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"user-admin/internal/config"
@@ -11,12 +13,18 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
+type contextKey string
+
+const (
+	tokenKey contextKey = "token"
+)
+
 func AuthorizationMiddleware(cfg *config.Config, requiredRoles []string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			tokenString := extractTokenFromRequest(r)
+			tokenString := extractTokenFromBody(r)
 			if tokenString == "" {
-				utils.RespondWithError(w, http.StatusUnauthorized, "Authorization token not provided")
+				utils.RespondWithError(w, http.StatusUnauthorized, "Authorization token not provided in the request body")
 				return
 			}
 
@@ -37,19 +45,27 @@ func AuthorizationMiddleware(cfg *config.Config, requiredRoles []string) func(ht
 				return
 			}
 
-			next.ServeHTTP(w, r)
+			// Pass the claims to the next handler
+			ctx := r.Context()
+			ctx = context.WithValue(ctx, tokenKey, claims)
+			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
+func extractTokenFromBody(r *http.Request) string {
+	var requestBody map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		slog.Error("Error decoding request body:", err)
+		return ""
+	}
 
-func extractTokenFromRequest(r *http.Request) string {
-    cookie, err := r.Cookie("jwt_token")
-    if err != nil {
-        slog.Error("Error setting up cookies: %v", utils.Err(err))
-        return ""
-    }
-    slog.Info("Received token:", slog.String("token", cookie.Value))
-    return cookie.Value
+	token, ok := requestBody[string(tokenKey)].(string)
+	if !ok {
+		slog.Error("Token not found in request body")
+		return ""
+	}
+
+	return token
 }
 
 func hasRequiredRoles(userRoles []interface{}, requiredRoles []string) bool {
