@@ -84,7 +84,7 @@ func main() {
 		os.Exit(0)
 	}()
 
-	err = http.ListenAndServe(":8082", mainRouter)
+	err = http.ListenAndServe("127.0.0.1:8082", mainRouter)
 	if err != nil {
 		slog.Error("Server failed to start:", utils.Err(err))
 	}
