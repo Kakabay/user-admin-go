@@ -49,7 +49,6 @@ func main() {
 
 	authRouter.Post("/login", authHandler.LoginHandler)
 
-	// Applying AuthorizationMiddleware to the user-related routes, excluding /login
 	userRouter := chi.NewRouter()
 	userRouter.Use(middleware.AuthorizationMiddleware(cfg, []string{"admin", "super_admin"}))
 	mainRouter.Route("/api/user", func(r chi.Router) {

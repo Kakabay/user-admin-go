@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"user-admin/internal/domain"
 	"user-admin/internal/service"
@@ -11,7 +12,7 @@ import (
 
 type AdminAuthHandler struct {
 	AdminAuthService service.AdminAuthService
-	Router *chi.Mux
+	Router           *chi.Mux
 }
 
 type LoginRequest struct {
@@ -28,31 +29,28 @@ type ErrorResponse struct {
 	Message string `json:"message"`
 }
 
-type SuccessResponse struct {
-	Status int         `json:"status"`
-	Data   interface{} `json:"data"`
-}
-
 func (h *AdminAuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
-    var loginRequest LoginRequest
-    if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
-        Error(w, http.StatusBadRequest, "Invalid request format")
-        return
-    }
+	var loginRequest LoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
+		slog.Error("Error decoding login request:", err)
+		Error(w, http.StatusBadRequest, "Invalid request format")
+		return
+	}
 
-    token, err := h.AdminAuthService.LoginAdmin(loginRequest.Username, loginRequest.Password)
-    if err != nil {
-        if err == domain.ErrAdminNotFound {
-            Error(w, http.StatusNotFound, "User not found")
-            return
-        }
-
-        Error(w, http.StatusUnauthorized, "Invalid credentials")
-        return
-    }
+	token, err := h.AdminAuthService.LoginAdmin(loginRequest.Username, loginRequest.Password)
+	if err != nil {
+		switch err {
+		case domain.ErrAdminNotFound:
+			Error(w, http.StatusNotFound, "User not found")
+		default:
+			slog.Error("Error during login:", err)
+			Error(w, http.StatusUnauthorized, "Invalid credentials")
+		}
+		return
+	}
 
 	loginResponse := LoginResponse{Token: token}
-    respondJSON(w, http.StatusOK, loginResponse)
+	respondJSON(w, http.StatusOK, loginResponse)
 }
 
 func Error(w http.ResponseWriter, status int, message string) {
@@ -64,7 +62,7 @@ func Error(w http.ResponseWriter, status int, message string) {
 }
 
 func respondJSON(w http.ResponseWriter, status int, data interface{}) {
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(status)
-    json.NewEncoder(w).Encode(data)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(data)
 }
