@@ -37,13 +37,13 @@ func AuthorizationMiddleware(cfg *config.Config, requiredRoles []string) func(ht
                 return
             }
 
-			adminRoles, ok := claims["role"].([]string)
-			if !ok || len(adminRoles) == 0 {
-				utils.RespondWithError(w, http.StatusUnauthorized, "Roles not found in token claims")
+			adminRole, ok := claims["role"].(string)
+			if !ok {
+				utils.RespondWithError(w, http.StatusUnauthorized, "Role not found in token claims")
 				return
 			}
 			
-			if !hasRequiredRoles(adminRoles, requiredRoles) {
+			if !hasRequiredRole(adminRole, requiredRoles) {
 				utils.RespondWithError(w, http.StatusForbidden, "Insufficient permissions")
 				return
 			}
@@ -73,15 +73,13 @@ func extractTokenFromHeader(r *http.Request) string {
 }
 
 
-func hasRequiredRoles(adminRoles []string, requiredRoles []string) bool {
-    for _, requiredRole := range requiredRoles {
-        for _, adminRole := range adminRoles {
-            if adminRole == requiredRole {
-                return true
-            }
-        }
-    }
-    return false
+func hasRequiredRole(adminRole string, requiredRoles []string) bool {
+	for _, requiredRole := range requiredRoles {
+		if adminRole == requiredRole {
+			return true
+		}
+	}
+	return false
 }
 
 

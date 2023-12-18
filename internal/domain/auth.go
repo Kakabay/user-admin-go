@@ -6,7 +6,7 @@ type Admin struct {
 	ID       int32  `json:"id"`
 	Username string `json:"username"`
 	Password string `json:"password"`
-	Roles    []string `json:"roles"`
+	Role    string `json:"role"`
 }
 
 var (
