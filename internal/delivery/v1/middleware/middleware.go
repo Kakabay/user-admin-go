@@ -14,39 +14,41 @@ import (
 func AuthorizationMiddleware(cfg *config.Config, requiredRoles []string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tokenString := extractTokenFromRequest(r)
-		if tokenString == "" {
-			utils.RespondWithError(w, http.StatusUnauthorized, "Authorization token not provided")
-			return
-		}
+			tokenString := extractTokenFromRequest(r)
+			if tokenString == "" {
+				utils.RespondWithError(w, http.StatusUnauthorized, "Authorization token not provided")
+				return
+			}
 
-		claims, err := validateToken(tokenString, cfg)
-		if err != nil {
-			utils.RespondWithError(w, http.StatusUnauthorized, "Invalid authorization token")
-			return
-		}
+			claims, err := validateToken(tokenString, cfg)
+			if err != nil {
+				utils.RespondWithError(w, http.StatusUnauthorized, fmt.Sprintf("Invalid authorization token: %v", err))
+				return
+			}
 
-		roles, ok := claims["roles"].([]interface{})
-		if !ok {
-			utils.RespondWithError(w, http.StatusUnauthorized, "Roles not found in token")
-			return
-		}
+			roles, ok := claims["roles"].([]interface{})
+			if !ok {
+				utils.RespondWithError(w, http.StatusUnauthorized, "Roles not found in token claims")
+				return
+			}
 
-		if !hasRequiredRoles(roles, requiredRoles) {
-			utils.RespondWithError(w, http.StatusForbidden, "Insufficient permissions")
-			return
-		}
+			if !hasRequiredRoles(roles, requiredRoles) {
+				utils.RespondWithError(w, http.StatusForbidden, "Insufficient permissions")
+				return
+			}
 
-		next.ServeHTTP(w, r)
-	})
-}
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 func extractTokenFromRequest(r *http.Request) string {
     cookie, err := r.Cookie("jwt_token")
     if err != nil {
+        slog.Error("Error setting up cookies: %v", utils.Err(err))
         return ""
     }
+    slog.Info("Received token:", slog.String("token", cookie.Value))
     return cookie.Value
 }
 
@@ -75,15 +77,15 @@ func validateToken(tokenString string, cfg *config.Config) (jwt.MapClaims, error
     })
 
     if err != nil || !token.Valid {
-		slog.Error("Token validation error: %v", err)
-		return nil, err
-	}
-	
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok || claims == nil {
-		slog.Error("Invalid token claims")
-		return nil, fmt.Errorf("invalid token claims")
-	}
+        slog.Error("Token validation error: %v", err)
+        return nil, fmt.Errorf("token validation error: %v", err)
+    }
+
+    claims, ok := token.Claims.(jwt.MapClaims)
+    if !ok || claims == nil {
+        slog.Error("Invalid token claims")
+        return nil, fmt.Errorf("invalid token claims")
+    }
 
     return claims, nil
 }

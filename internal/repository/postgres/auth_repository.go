@@ -10,6 +10,7 @@ import (
 	"user-admin/internal/config"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/lib/pq"
 )
 
 type PostgresAdminAuthRepository struct {
@@ -23,7 +24,7 @@ func NewPostgresAdminAuthRepository(db *sql.DB, jwtConfig config.JWT) *PostgresA
 
 func (r *PostgresAdminAuthRepository) GetAdminByUsername(username string) (*domain.Admin, error) {
 	query := `
-		SELECT id, username, password, role
+		SELECT id, username, password, STRING_TO_ARRAY(role, ',') AS roles
 		FROM admins
 		WHERE username = $1
 		LIMIT 1
@@ -33,9 +34,10 @@ func (r *PostgresAdminAuthRepository) GetAdminByUsername(username string) (*doma
 
 	var admin domain.Admin
 
-	err := row.Scan(&admin.ID, &admin.Username, &admin.Password, &admin.Roles)
+	err := row.Scan(&admin.ID, &admin.Username, &admin.Password, pq.Array(&admin.Roles))
 	if err != nil {
 		if err == sql.ErrNoRows {
+			slog.Error("Admin was not found")
 			return nil, domain.ErrAdminNotFound
 		}
 
@@ -60,6 +62,6 @@ func (r *PostgresAdminAuthRepository) GenerateJWT(admin *domain.Admin) (string, 
 		slog.Error("Error generating JWT: %v", utils.Err(err))
 		return "", err
 	}
-
+	
 	return tokenString, nil
 }

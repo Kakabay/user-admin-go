@@ -36,33 +36,35 @@ type SuccessResponse struct {
 }
 
 func (h *AdminAuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
-	var loginRequest LoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
-		Error(w, http.StatusBadRequest, "Invalid request format")
-		return
-	}
+    var loginRequest LoginRequest
+    if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
+        Error(w, http.StatusBadRequest, "Invalid request format")
+        return
+    }
 
-	token, err := h.AdminAuthService.LoginAdmin(loginRequest.Username, loginRequest.Password)
-	if err != nil {
-		if err == domain.ErrAdminNotFound {
-			Error(w, http.StatusNotFound, "User not found")
-			return
-		}
+    token, err := h.AdminAuthService.LoginAdmin(loginRequest.Username, loginRequest.Password)
+    if err != nil {
+        if err == domain.ErrAdminNotFound {
+            Error(w, http.StatusNotFound, "User not found")
+            return
+        }
 
-		Error(w, http.StatusUnauthorized, "Invalid credentials")
-		return
-	}
+        Error(w, http.StatusUnauthorized, "Invalid credentials")
+        return
+    }
 
-	http.SetCookie(w, &http.Cookie{
-		Name: "jwt_token",
-		Value: token,
-		HttpOnly: true,
-		Path: "/",
-		MaxAge: int(time.Minute * 30),
-		Secure: true,
-	})
+    // Set the cookie in the response
+    cookie := &http.Cookie{
+        Name:     "jwt_token",
+        Value:    token,
+        Path:     "/",
+        MaxAge:   int(time.Minute * 30),
+        HttpOnly: true,
+    }
 
-	Success(w, http.StatusOK)
+	http.SetCookie(w, cookie)
+
+    Success(w, http.StatusOK)
 }
 
 func Error(w http.ResponseWriter, status int, message string) {
