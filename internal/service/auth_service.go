@@ -30,11 +30,11 @@ func (s *AdminAuthService) LoginAdmin(username, password string) (string, error)
         return "", domain.ErrInvalidCredentials
     }
 
-    token, err := s.AdminAuthRepository.GenerateJWT(admin)
+    accessToken, err := s.AdminAuthRepository.GenerateAccessToken(admin)
     if err != nil {
         slog.Error("Error generating JWT:", utils.Err(err))
         return "", err
     }
 
-    return token, nil
+    return accessToken, nil
 }

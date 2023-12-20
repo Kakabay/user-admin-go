@@ -47,7 +47,7 @@ func (r *PostgresAdminAuthRepository) GetAdminByUsername(username string) (*doma
 	return &admin, nil
 }
 
-func (r *PostgresAdminAuthRepository) GenerateJWT(admin *domain.Admin) (string, error) {
+func (r *PostgresAdminAuthRepository) GenerateAccessToken(admin *domain.Admin) (string, error) {
 	claims := jwt.MapClaims{
 		"id": admin.ID,
 		"role": admin.Role,
@@ -58,7 +58,7 @@ func (r *PostgresAdminAuthRepository) GenerateJWT(admin *domain.Admin) (string, 
 
 	tokenString, err := token.SignedString([]byte(r.JWTConfig.SecretKey))
 	if err != nil {
-		slog.Error("Error generating JWT: %v", utils.Err(err))
+		slog.Error("Error generating access token: %v", utils.Err(err))
 		return "", err
 	}
 	

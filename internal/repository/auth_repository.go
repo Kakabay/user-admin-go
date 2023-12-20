@@ -5,5 +5,5 @@ import "user-admin/internal/domain"
 type AdminAuthRepository interface {
 	// Methods for authentication
 	GetAdminByUsername(username string) (*domain.Admin, error)
-	GenerateJWT(admin *domain.Admin) (string, error)
+	GenerateAccessToken(admin *domain.Admin) (string, error)
 }
