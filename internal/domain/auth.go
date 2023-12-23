@@ -1,12 +1,14 @@
 package domain
 
-import "errors"
+import (
+	"errors"
+)
 
 type Admin struct {
 	ID       int32  `json:"id"`
 	Username string `json:"username"`
 	Password string `json:"password"`
-	Role    string `json:"role"`
+	Role     string `json:"role"`
 }
 
 var (
@@ -14,5 +16,5 @@ var (
 )
 
 var (
-    ErrAdminNotFound = errors.New("admin not found")
+	ErrAdminNotFound = errors.New("admin not found")
 )
