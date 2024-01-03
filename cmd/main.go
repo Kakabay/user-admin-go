@@ -48,6 +48,7 @@ func main() {
 	}
 
 	authRouter.Post("/login", authHandler.LoginHandler)
+	authRouter.Post("/refresh", authHandler.RefreshTokensHandler) 
 
 	userRouter := chi.NewRouter()
 	userRouter.Use(middleware.AuthorizationMiddleware(cfg, []string{"admin", "super_admin"}))
