@@ -57,7 +57,6 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
     }
 }
 
-
 func ScanUserRow(rows *sql.Rows) (domain.CommonUserResponse, error) {
     var user domain.CommonUserResponse
     var firstName, lastName, gender, location, email, profilePhotoURL sql.NullString

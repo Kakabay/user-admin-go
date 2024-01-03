@@ -83,14 +83,13 @@ func hasRequiredRole(adminRole string, requiredRoles []string) bool {
 }
 
 
-
 // validateToken validates and parses the JWT token.
 func validateToken(tokenString string, cfg *config.Config) (jwt.MapClaims, error) {
     token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
         if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
             return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
         }
-        return []byte(cfg.JWT.SecretKey), nil
+        return []byte(cfg.JWT.AccessSecretKey), nil
     })
 
     if err != nil || !token.Valid {

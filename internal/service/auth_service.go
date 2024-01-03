@@ -17,24 +17,30 @@ func NewAdminAuthService(adminAuthRepository repository.AdminAuthRepository) *Ad
 	return &AdminAuthService{AdminAuthRepository: adminAuthRepository}
 }
 
-func (s *AdminAuthService) LoginAdmin(username, password string) (string, error) {
+func (s *AdminAuthService) LoginAdmin(username, password string) (string, string, error) {
     admin, err := s.AdminAuthRepository.GetAdminByUsername(username)
     if err != nil {
         slog.Error("Error getting admin by username:", utils.Err(err))
-        return "", err
+        return "", "", err
     }
 
     err = bcrypt.CompareHashAndPassword([]byte(admin.Password), []byte(password))
     if err != nil {
         slog.Error("Error comparing passwords:", utils.Err(err))
-        return "", domain.ErrInvalidCredentials
+        return "", "", domain.ErrInvalidCredentials
     }
 
     accessToken, err := s.AdminAuthRepository.GenerateAccessToken(admin)
     if err != nil {
         slog.Error("Error generating JWT:", utils.Err(err))
-        return "", err
+        return "", "", err
     }
 
-    return accessToken, nil
+    refreshToken, err := s.AdminAuthRepository.GenerateRefreshToken(admin)
+    if err != nil {
+        slog.Error("Error generating refresh token:", utils.Err(err))
+        return "", "", err
+    }
+
+    return accessToken, refreshToken, nil
 }

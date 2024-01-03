@@ -31,7 +31,8 @@ type HTTPServer struct {
 }
 
 type JWT struct {
-	SecretKey string `yaml:"secret_key"`
+	AccessSecretKey string `yaml:"access_secret_key"`
+	RefreshSecretKey string `yaml:"refresh_secret_key"`
 }
 
 func LoadConfig() *Config {

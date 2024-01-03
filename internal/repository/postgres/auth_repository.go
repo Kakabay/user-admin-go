@@ -10,6 +10,7 @@ import (
 	"user-admin/internal/config"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/google/uuid"
 )
 
 type PostgresAdminAuthRepository struct {
@@ -56,11 +57,40 @@ func (r *PostgresAdminAuthRepository) GenerateAccessToken(admin *domain.Admin) (
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	tokenString, err := token.SignedString([]byte(r.JWTConfig.SecretKey))
+	tokenString, err := token.SignedString([]byte(r.JWTConfig.AccessSecretKey))
 	if err != nil {
 		slog.Error("Error generating access token: %v", utils.Err(err))
 		return "", err
 	}
 	
 	return tokenString, nil
+}
+
+func (r *PostgresAdminAuthRepository) GenerateRefreshToken(admin *domain.Admin) (string, error) {
+	refreshTokenID := uuid.New().String()
+
+	refreshClaims := jwt.MapClaims{
+		"id":      refreshTokenID,
+		"adminID": admin.ID,
+		"exp":     time.Now().Add(7 * 24 * time.Hour).Unix(),
+	}
+
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
+
+	refreshTokenString, err := refreshToken.SignedString([]byte(r.JWTConfig.RefreshSecretKey))
+	if err != nil {
+		return "", err
+	}
+
+	query := `
+		INSERT INTO refresh_tokens (admin_id, token, expiration_time)
+		VALUES ($1, $2, TO_TIMESTAMP($3))
+	`
+	_, err = r.DB.Exec(query, admin.ID, refreshTokenString, refreshClaims["exp"])
+	if err != nil {
+		slog.Error("Failed to save generated refresh tokens in database", utils.Err(err))
+		return "", err
+	}
+
+	return refreshTokenString, nil
 }

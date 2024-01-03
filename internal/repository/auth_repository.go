@@ -6,4 +6,5 @@ type AdminAuthRepository interface {
 	// Methods for authentication
 	GetAdminByUsername(username string) (*domain.Admin, error)
 	GenerateAccessToken(admin *domain.Admin) (string, error)
+	GenerateRefreshToken(admin *domain.Admin) (string, error)
 }

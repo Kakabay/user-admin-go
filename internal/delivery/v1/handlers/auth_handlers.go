@@ -21,7 +21,8 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	Token string `json:"token"`
+	AccessToken string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 type ErrorResponse struct {
@@ -37,7 +38,7 @@ func (h *AdminAuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	token, err := h.AdminAuthService.LoginAdmin(loginRequest.Username, loginRequest.Password)
+	accessToken, refreshToken, err := h.AdminAuthService.LoginAdmin(loginRequest.Username, loginRequest.Password)
 	if err != nil {
 		switch err {
 		case domain.ErrAdminNotFound:
@@ -49,7 +50,10 @@ func (h *AdminAuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	loginResponse := LoginResponse{Token: token}
+	loginResponse := LoginResponse{
+		AccessToken: accessToken,
+		RefreshToken: refreshToken,
+	}
 	respondJSON(w, http.StatusOK, loginResponse)
 }
 

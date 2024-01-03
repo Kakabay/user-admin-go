@@ -2,6 +2,7 @@ package domain
 
 import (
 	"errors"
+	"time"
 )
 
 type Admin struct {
@@ -9,6 +10,14 @@ type Admin struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Role     string `json:"role"`
+}
+
+type RefreshToken struct {
+    ID             int    `json:"id"`
+    AdminID        int    `json:"admin_id"`
+    Token          string `json:"token"`
+    ExpirationTime time.Time   `json:"expiration_time"`
+    CreatedAt      time.Time   `json:"created_at"`
 }
 
 var (
