@@ -10,11 +10,11 @@ import (
 )
 
 type AdminAuthService struct {
-	AdminAuthRepository repository.AdminAuthRepository
+    AdminAuthRepository repository.AdminAuthRepository
 }
 
 func NewAdminAuthService(adminAuthRepository repository.AdminAuthRepository) *AdminAuthService {
-	return &AdminAuthService{AdminAuthRepository: adminAuthRepository}
+    return &AdminAuthService{AdminAuthRepository: adminAuthRepository}
 }
 
 func (s *AdminAuthService) LoginAdmin(username, password string) (string, string, error) {
@@ -31,10 +31,10 @@ func (s *AdminAuthService) LoginAdmin(username, password string) (string, string
     }
 
     accessToken, err := s.AdminAuthRepository.GenerateAccessToken(admin)
-    if err != nil {
-        slog.Error("Error generating JWT:", utils.Err(err))
-        return "", "", err
-    }
+	if err != nil {
+		slog.Error("Error generating access token:", utils.Err(err))
+		return "", "", err
+	}
 
     refreshToken, err := s.AdminAuthRepository.GenerateRefreshToken(admin)
     if err != nil {
@@ -43,4 +43,35 @@ func (s *AdminAuthService) LoginAdmin(username, password string) (string, string
     }
 
     return accessToken, refreshToken, nil
+}
+
+func (s *AdminAuthService) RefreshTokens(refreshToken string) (string, error) {
+    claims, err := s.AdminAuthRepository.ValidateRefreshToken(refreshToken)
+    if err != nil {
+        slog.Error("Error validating refresh token:", utils.Err(err))
+        return "", err
+    }
+
+    adminIDFloat, ok := claims["adminID"].(float64)
+    if !ok {
+        slog.Error("AdminID not found or not a number in refresh token claims")
+        return "", domain.ErrInvalidRefreshToken
+    }
+
+    // Convert adminID to int
+    adminID := int(adminIDFloat)
+
+    admin, err := s.AdminAuthRepository.GetAdminByID(adminID)
+    if err != nil {
+        slog.Error("Error getting admin by ID:", utils.Err(err))
+        return "", err
+    }
+
+    newAccessToken, err := s.AdminAuthRepository.GenerateAccessToken(admin)
+    if err != nil {
+        slog.Error("Error generating access token:", utils.Err(err))
+        return "", err
+    }
+
+    return newAccessToken, nil
 }
