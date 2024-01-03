@@ -57,6 +57,23 @@ func (h *AdminAuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) 
 	respondJSON(w, http.StatusOK, loginResponse)
 }
 
+func (h *AdminAuthHandler) RefreshTokensHandler(w http.ResponseWriter, r *http.Request) {
+	refreshToken := r.Header.Get("Authorization")
+	if refreshToken == "" {
+		Error(w, http.StatusUnauthorized, "Refresh token not provided")
+		return
+	}
+
+	newAccessToken, err := h.AdminAuthService.RefreshTokens(refreshToken)
+	if err != nil {
+		slog.Error("Error refreshing tokens:", err)
+		Error(w, http.StatusUnauthorized, "Invalid refresh token")
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]string{"access_token": newAccessToken})
+}
+
 func Error(w http.ResponseWriter, status int, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
