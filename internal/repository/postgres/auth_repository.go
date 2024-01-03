@@ -96,22 +96,6 @@ func (r *PostgresAdminAuthRepository) GenerateRefreshToken(admin *domain.Admin) 
 	return refreshTokenString, nil
 }
 
-func (r *PostgresAdminAuthRepository) GenerateTokens(admin *domain.Admin) (string, string, error) {
-	// Generate access token
-	accessToken, err := r.GenerateAccessToken(admin)
-	if err != nil {
-		return "", "", err
-	}
-
-	// Generate refresh token
-	refreshToken, err := r.GenerateRefreshToken(admin)
-	if err != nil {
-		return "", "", err
-	}
-
-	return accessToken, refreshToken, nil
-}
-
 func (r *PostgresAdminAuthRepository) ValidateRefreshToken(refreshToken string) (map[string]interface{}, error) {
 	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -161,7 +145,6 @@ func (r *PostgresAdminAuthRepository) GetAdminByID(adminID int) (*domain.Admin, 
 	return &admin, nil
 }
 
-// DeleteRefreshToken deletes the specified refresh token.
 func (r *PostgresAdminAuthRepository) DeleteRefreshToken(refreshToken string) error {
 	query := `
 		DELETE FROM refresh_tokens
