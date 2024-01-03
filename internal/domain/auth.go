@@ -27,3 +27,7 @@ var (
 var (
 	ErrAdminNotFound = errors.New("admin not found")
 )
+
+var (
+	ErrInvalidRefreshToken = errors.New("invalid refresh token")
+)
