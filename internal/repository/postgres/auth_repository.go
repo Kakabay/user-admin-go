@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"time"
 	"user-admin/internal/domain"
@@ -93,4 +94,85 @@ func (r *PostgresAdminAuthRepository) GenerateRefreshToken(admin *domain.Admin) 
 	}
 
 	return refreshTokenString, nil
+}
+
+func (r *PostgresAdminAuthRepository) GenerateTokens(admin *domain.Admin) (string, string, error) {
+	// Generate access token
+	accessToken, err := r.GenerateAccessToken(admin)
+	if err != nil {
+		return "", "", err
+	}
+
+	// Generate refresh token
+	refreshToken, err := r.GenerateRefreshToken(admin)
+	if err != nil {
+		return "", "", err
+	}
+
+	return accessToken, refreshToken, nil
+}
+
+func (r *PostgresAdminAuthRepository) ValidateRefreshToken(refreshToken string) (map[string]interface{}, error) {
+	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(r.JWTConfig.RefreshSecretKey), nil
+	})
+
+	if err != nil || !token.Valid {
+		slog.Error("Refresh token validation error: %v", err)
+		return nil, fmt.Errorf("refresh token validation error: %v", err)
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || claims == nil {
+		slog.Error("Invalid refresh token claims")
+		return nil, fmt.Errorf("invalid refresh token claims")
+	}
+
+	return claims, nil
+}
+
+// GetAdminByID retrieves an admin by ID.
+func (r *PostgresAdminAuthRepository) GetAdminByID(adminID int) (*domain.Admin, error) {
+	query := `
+		SELECT id, username, password, role
+		FROM admins
+		WHERE id = $1
+		LIMIT 1
+	`
+
+	row := r.DB.QueryRow(query, adminID)
+
+	var admin domain.Admin
+
+	err := row.Scan(&admin.ID, &admin.Username, &admin.Password, &admin.Role)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			slog.Error("Admin not found")
+			return nil, domain.ErrAdminNotFound
+		}
+
+		slog.Error("Error getting admin by ID: %v", err)
+		return nil, err
+	}
+
+	return &admin, nil
+}
+
+// DeleteRefreshToken deletes the specified refresh token.
+func (r *PostgresAdminAuthRepository) DeleteRefreshToken(refreshToken string) error {
+	query := `
+		DELETE FROM refresh_tokens
+		WHERE token = $1
+	`
+
+	_, err := r.DB.Exec(query, refreshToken)
+	if err != nil {
+		slog.Error("Failed to delete refresh token from database", utils.Err(err))
+		return err
+	}
+
+	return nil
 }
