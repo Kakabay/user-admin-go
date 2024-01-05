@@ -118,7 +118,6 @@ func (r *PostgresAdminAuthRepository) ValidateRefreshToken(refreshToken string) 
 	return claims, nil
 }
 
-// GetAdminByID retrieves an admin by ID.
 func (r *PostgresAdminAuthRepository) GetAdminByID(adminID int) (*domain.Admin, error) {
 	query := `
 		SELECT id, username, password, role
