@@ -48,7 +48,7 @@ func main() {
 	}
 
 	authRouter.Post("/login", authHandler.LoginHandler)
-	authRouter.Post("/refresh", authHandler.RefreshTokensHandler) 
+	authRouter.Post("/refresh", authHandler.RefreshTokensHandler)
 
 	userRouter := chi.NewRouter()
 	userRouter.Use(middleware.AuthorizationMiddleware(cfg, []string{"admin", "super_admin"}))
@@ -85,7 +85,7 @@ func main() {
 		os.Exit(0)
 	}()
 
-	err = http.ListenAndServe("127.0.0.1:8082", mainRouter)
+	err = http.ListenAndServe(cfg.Address, mainRouter)
 	if err != nil {
 		slog.Error("Server failed to start:", utils.Err(err))
 	}
