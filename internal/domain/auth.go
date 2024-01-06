@@ -6,18 +6,17 @@ import (
 )
 
 type Admin struct {
-	ID       int32  `json:"id"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Role     string `json:"role"`
+	ID           int32        `json:"id"`
+	Username     string       `json:"username"`
+	Password     string       `json:"password"`
+	Role         string       `json:"role"`
+	RefreshToken RefreshToken `json:"refresh_token"`
 }
 
 type RefreshToken struct {
-    ID             int    `json:"id"`
-    AdminID        int    `json:"admin_id"`
-    Token          string `json:"token"`
-    ExpirationTime time.Time   `json:"expiration_time"`
-    CreatedAt      time.Time   `json:"created_at"`
+	Token          string    `json:"token"`
+	ExpirationTime time.Time `json:"expiration_time"`
+	CreatedAt      time.Time `json:"created_at"`
 }
 
 var (
