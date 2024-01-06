@@ -81,9 +81,17 @@ func (r *PostgresUserRepository) GetUserByID(id int32) (*domain.GetUserResponse,
 	var firstName, lastName, gender, location, email, profilePhotoURL sql.NullString
 	var dateOfBirth sql.NullTime
 	err = row.Scan(
-		&user.ID, &firstName, &lastName, &user.PhoneNumber, &user.Blocked,
-		&user.RegistrationDate, &gender, &dateOfBirth, &location,
-		&email, &profilePhotoURL,
+		&user.ID,
+		&firstName,
+		&lastName,
+		&user.PhoneNumber,
+		&user.Blocked,
+		&user.RegistrationDate,
+		&gender,
+		&dateOfBirth,
+		&location,
+		&email,
+		&profilePhotoURL,
 	)
 	if err != nil {
 		slog.Error("error scanning user row: %v", utils.Err(err))

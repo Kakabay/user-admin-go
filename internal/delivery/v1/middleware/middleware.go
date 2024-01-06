@@ -83,7 +83,7 @@ func validateToken(tokenString string, cfg *config.Config) (jwt.MapClaims, error
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(cfg.JWT.RefreshSecretKey), nil // Use RefreshSecretKey for refresh tokens
+		return []byte(cfg.JWT.AccessSecretKey), nil // Use RefreshSecretKey for refresh tokens
 	})
 
 	if err != nil || !token.Valid {

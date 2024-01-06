@@ -42,7 +42,7 @@ func (h *AdminAuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		switch err {
 		case domain.ErrAdminNotFound:
-			Error(w, http.StatusNotFound, "User not found")
+			Error(w, http.StatusNotFound, "Admin not found")
 		default:
 			slog.Error("Error during login:", err)
 			Error(w, http.StatusUnauthorized, "Invalid credentials")

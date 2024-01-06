@@ -165,6 +165,7 @@ func (r *PostgresAdminAuthRepository) GetAdminByID(adminID int) (*domain.Admin, 
 	return &admin, nil
 }
 
+// in case if I need to delete refresh tokens
 func (r *PostgresAdminAuthRepository) DeleteRefreshToken(refreshToken string) error {
 	query := `
 		DELETE FROM admins
