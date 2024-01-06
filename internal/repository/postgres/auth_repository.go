@@ -23,6 +23,11 @@ func NewPostgresAdminAuthRepository(db *sql.DB, jwtConfig config.JWT) *PostgresA
 	return &PostgresAdminAuthRepository{DB: db, JWTConfig: jwtConfig}
 }
 
+const (
+	accessTokenExpiration  = 30 * time.Minute
+	refreshTokenExpiration = 7 * 24 * time.Hour
+)
+
 func (r *PostgresAdminAuthRepository) GetAdminByUsername(username string) (*domain.Admin, error) {
 	query := `
 		SELECT id, username, password, role
@@ -69,7 +74,7 @@ func (r *PostgresAdminAuthRepository) generateAccessToken(admin *domain.Admin) (
 	claims := jwt.MapClaims{
 		"id":   admin.ID,
 		"role": admin.Role,
-		"exp":  time.Now().Add(30 * time.Minute).Unix(), // Token expiration time
+		"exp":  time.Now().Add(accessTokenExpiration).Unix(), // Token expiration time
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -89,7 +94,7 @@ func (r *PostgresAdminAuthRepository) generateRefreshToken(admin *domain.Admin) 
 	refreshClaims := jwt.MapClaims{
 		"id":      refreshTokenID,
 		"adminID": admin.ID,
-		"exp":     time.Now().Add(7 * 24 * time.Hour).Unix(),
+		"exp":     time.Now().Add(refreshTokenExpiration).Unix(),
 		"iat":     time.Now().Unix(),
 	}
 
@@ -169,7 +174,7 @@ func (r *PostgresAdminAuthRepository) GetAdminByID(adminID int) (*domain.Admin, 
 func (r *PostgresAdminAuthRepository) DeleteRefreshToken(refreshToken string) error {
 	query := `
 		DELETE FROM admins
-		WHERE token = $1
+		WHERE refresh_token = $1
 	`
 
 	_, err := r.DB.Exec(query, refreshToken)
