@@ -7,6 +7,9 @@ import (
 	"strings"
 	"user-admin/internal/domain"
 	"user-admin/internal/service"
+	"user-admin/pkg/lib/errors"
+	"user-admin/pkg/lib/status"
+	"user-admin/pkg/lib/utils"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -34,8 +37,8 @@ type ErrorResponse struct {
 func (h *AdminAuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var loginRequest LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
-		slog.Error("Error decoding login request:", err)
-		Error(w, http.StatusBadRequest, "Invalid request format")
+		slog.Error("Error decoding login request:", utils.Err(err))
+		Error(w, status.BadRequest, errors.InvalidRequestFormat)
 		return
 	}
 
@@ -43,10 +46,10 @@ func (h *AdminAuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		switch err {
 		case domain.ErrAdminNotFound:
-			Error(w, http.StatusNotFound, "Admin not found")
+			Error(w, status.NotFound, errors.AdminNotFound)
 		default:
-			slog.Error("Error during login:", err)
-			Error(w, http.StatusUnauthorized, "Invalid credentials")
+			slog.Error("Error during login:", utils.Err(err))
+			Error(w, status.Unauthorized, errors.InvalidCredentials)
 		}
 		return
 	}
@@ -55,23 +58,23 @@ func (h *AdminAuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) 
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}
-	respondJSON(w, http.StatusOK, loginResponse)
+	respondJSON(w, status.OK, loginResponse)
 }
 func (h *AdminAuthHandler) RefreshTokensHandler(w http.ResponseWriter, r *http.Request) {
 	refreshToken := extractTokenFromHeader(r)
 	if refreshToken == "" {
-		Error(w, http.StatusUnauthorized, "Refresh token not provided")
+		Error(w, status.Unauthorized, errors.RefreshTokenNotProvided)
 		return
 	}
 
 	newAccessToken, newRefreshToken, err := h.AdminAuthService.RefreshTokens(refreshToken)
 	if err != nil {
-		slog.Error("Error refreshing tokens:", err)
-		Error(w, http.StatusUnauthorized, "Invalid refresh token")
+		slog.Error("Error refreshing tokens:", utils.Err(err))
+		Error(w, status.Unauthorized, errors.InvalidRefreshToken)
 		return
 	}
 
-	respondJSON(w, http.StatusOK, map[string]string{
+	respondJSON(w, status.OK, map[string]string{
 		"access_token":  newAccessToken,
 		"refresh_token": newRefreshToken,
 	})
