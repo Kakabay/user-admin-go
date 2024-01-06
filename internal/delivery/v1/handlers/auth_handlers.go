@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strings"
 	"user-admin/internal/domain"
 	"user-admin/internal/service"
 
@@ -56,9 +57,8 @@ func (h *AdminAuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) 
 	}
 	respondJSON(w, http.StatusOK, loginResponse)
 }
-
 func (h *AdminAuthHandler) RefreshTokensHandler(w http.ResponseWriter, r *http.Request) {
-	refreshToken := r.Header.Get("Authorization")
+	refreshToken := extractTokenFromHeader(r)
 	if refreshToken == "" {
 		Error(w, http.StatusUnauthorized, "Refresh token not provided")
 		return
@@ -74,8 +74,17 @@ func (h *AdminAuthHandler) RefreshTokensHandler(w http.ResponseWriter, r *http.R
 	respondJSON(w, http.StatusOK, map[string]string{
 		"access_token":  newAccessToken,
 		"refresh_token": newRefreshToken,
-	},
-	)
+	})
+}
+
+func extractTokenFromHeader(r *http.Request) string {
+	bearerToken := r.Header.Get("Authorization")
+	if bearerToken == "" {
+		slog.Error("Authorization header not found")
+		return ""
+	}
+
+	return strings.TrimPrefix(bearerToken, "Bearer ")
 }
 
 func Error(w http.ResponseWriter, status int, message string) {

@@ -30,7 +30,7 @@ func AuthorizationMiddleware(cfg *config.Config, requiredRoles []string) func(ht
 				return
 			}
 
-			claims, err := validateToken(tokenString, cfg)
+			claims, err := validateToken(tokenString, cfg, isRefreshToken(r))
 			if err != nil {
 				utils.RespondWithError(w, http.StatusUnauthorized, fmt.Sprintf("Invalid authorization token: %v", err))
 				return
@@ -52,6 +52,43 @@ func AuthorizationMiddleware(cfg *config.Config, requiredRoles []string) func(ht
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+// validateToken validates the provided token string using the appropriate secret key based on token type.
+func validateToken(tokenString string, cfg *config.Config, isRefreshToken bool) (jwt.MapClaims, error) {
+	var secretKey string
+
+	if isRefreshToken {
+		secretKey = cfg.JWT.RefreshSecretKey
+	} else {
+		secretKey = cfg.JWT.AccessSecretKey
+	}
+
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+
+		return []byte(secretKey), nil
+	})
+
+	if err != nil || !token.Valid {
+		slog.Error("Token validation error: %v", err)
+		return nil, fmt.Errorf("token validation error: %v", err)
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || claims == nil {
+		slog.Error("Invalid token claims")
+		return nil, fmt.Errorf("invalid token claims")
+	}
+
+	return claims, nil
+}
+
+// isRefreshToken checks if the request is for a refresh token.
+func isRefreshToken(r *http.Request) bool {
+	return strings.Contains(r.URL.Path, "/refresh")
 }
 
 func extractTokenFromHeader(r *http.Request) string {
@@ -76,26 +113,4 @@ func hasRequiredRole(adminRole string, requiredRoles []string) bool {
 		}
 	}
 	return false
-}
-
-func validateToken(tokenString string, cfg *config.Config) (jwt.MapClaims, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return []byte(cfg.JWT.AccessSecretKey), nil // Use RefreshSecretKey for refresh tokens
-	})
-
-	if err != nil || !token.Valid {
-		slog.Error("Token validation error: %v", err)
-		return nil, fmt.Errorf("token validation error: %v", err)
-	}
-
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok || claims == nil {
-		slog.Error("Invalid token claims")
-		return nil, fmt.Errorf("invalid token claims")
-	}
-
-	return claims, nil
 }
