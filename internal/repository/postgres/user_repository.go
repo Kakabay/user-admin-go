@@ -16,14 +16,14 @@ type PostgresUserRepository struct {
 	DB *sql.DB
 }
 
-func NewPostgresUserRepository(db *sql.DB) *PostgresUserRepository{
+func NewPostgresUserRepository(db *sql.DB) *PostgresUserRepository {
 	return &PostgresUserRepository{DB: db}
 }
 
 func (r *PostgresUserRepository) GetAllUsers(page, pageSize int) (*domain.UsersList, error) {
-    offset := (page - 1) * pageSize
+	offset := (page - 1) * pageSize
 
-    query := `
+	query := `
         SELECT id, first_name, last_name, phone_number, blocked,
         registration_date, gender, date_of_birth, location,
         email, profile_photo_url
@@ -31,35 +31,35 @@ func (r *PostgresUserRepository) GetAllUsers(page, pageSize int) (*domain.UsersL
         ORDER BY id
         LIMIT $1 OFFSET $2
     `
-    stmt, err := r.DB.Prepare(query)
-    if err != nil {
-        slog.Error("Error preparing query: %v", utils.Err(err))
-        return nil, err
-    }
-    defer stmt.Close()
+	stmt, err := r.DB.Prepare(query)
+	if err != nil {
+		slog.Error("Error preparing query: %v", utils.Err(err))
+		return nil, err
+	}
+	defer stmt.Close()
 
-    rows, err := stmt.QueryContext(context.TODO(), pageSize, offset)
-    if err != nil {
-        slog.Error("Error executing query: %v", utils.Err(err))
-        return nil, err
-    }
-    defer rows.Close()
+	rows, err := stmt.QueryContext(context.TODO(), pageSize, offset)
+	if err != nil {
+		slog.Error("Error executing query: %v", utils.Err(err))
+		return nil, err
+	}
+	defer rows.Close()
 
-    userList := domain.UsersList{Users: make([]domain.CommonUserResponse, 0)}
-    for rows.Next() {
-        user, err := utils.ScanUserRow(rows)
-        if err != nil {
-            return nil, err
-        }
-        userList.Users = append(userList.Users, user)
-    }
+	userList := domain.UsersList{Users: make([]domain.CommonUserResponse, 0)}
+	for rows.Next() {
+		user, err := utils.ScanUserRow(rows)
+		if err != nil {
+			return nil, err
+		}
+		userList.Users = append(userList.Users, user)
+	}
 
-    if err := rows.Err(); err != nil {
-        slog.Error("Error iterating over user rows: %v", utils.Err(err))
-        return nil, err
-    }
+	if err := rows.Err(); err != nil {
+		slog.Error("Error iterating over user rows: %v", utils.Err(err))
+		return nil, err
+	}
 
-    return &userList, nil
+	return &userList, nil
 }
 
 func (r *PostgresUserRepository) GetUserByID(id int32) (*domain.GetUserResponse, error) {
@@ -78,12 +78,12 @@ func (r *PostgresUserRepository) GetUserByID(id int32) (*domain.GetUserResponse,
 	row := stmt.QueryRowContext(context.TODO(), id)
 
 	var user domain.GetUserResponse
-        var firstName, lastName,  gender, location, email, profilePhotoURL sql.NullString
-        var dateOfBirth sql.NullTime
+	var firstName, lastName, gender, location, email, profilePhotoURL sql.NullString
+	var dateOfBirth sql.NullTime
 	err = row.Scan(
 		&user.ID, &firstName, &lastName, &user.PhoneNumber, &user.Blocked,
-        &user.RegistrationDate, &gender, &dateOfBirth, &location,
-        &email, &profilePhotoURL,
+		&user.RegistrationDate, &gender, &dateOfBirth, &location,
+		&email, &profilePhotoURL,
 	)
 	if err != nil {
 		slog.Error("error scanning user row: %v", utils.Err(err))
@@ -97,7 +97,7 @@ func (r *PostgresUserRepository) GetUserByID(id int32) (*domain.GetUserResponse,
 	user.Email = utils.HandleNullString(email)
 	user.ProfilePhotoURL = utils.HandleNullString(profilePhotoURL)
 
-    if dateOfBirth.Valid {
+	if dateOfBirth.Valid {
 		user.DateOfBirth.Year = int32(dateOfBirth.Time.Year())
 		user.DateOfBirth.Month = int32(dateOfBirth.Time.Month())
 		user.DateOfBirth.Day = int32(dateOfBirth.Time.Day())
@@ -106,7 +106,7 @@ func (r *PostgresUserRepository) GetUserByID(id int32) (*domain.GetUserResponse,
 	return &user, nil
 }
 
-func (r *PostgresUserRepository) CreateUser(request *domain.CreateUserRequest) (*domain.CreateUserResponse, error) {	
+func (r *PostgresUserRepository) CreateUser(request *domain.CreateUserRequest) (*domain.CreateUserResponse, error) {
 	if !utils.IsValidPhoneNumber(request.PhoneNumber) {
 		return nil, fmt.Errorf("invalid phone number format")
 	}
@@ -130,24 +130,24 @@ func (r *PostgresUserRepository) CreateUser(request *domain.CreateUserRequest) (
 	var dateOfBirth sql.NullTime
 
 	err = stmt.QueryRow(
-		utils.NullIfEmptyStr(request.FirstName), 
+		utils.NullIfEmptyStr(request.FirstName),
 		utils.NullIfEmptyStr(request.LastName),
-		request.PhoneNumber, 
+		request.PhoneNumber,
 		utils.NullIfEmptyStr(request.Gender),
-		utils.NullIfEmptyDate(request.DateOfBirth), 
+		utils.NullIfEmptyDate(request.DateOfBirth),
 		utils.NullIfEmptyStr(request.Location),
-		utils.NullIfEmptyStr(request.Email), 
+		utils.NullIfEmptyStr(request.Email),
 		utils.NullIfEmptyStr(request.ProfilePhotoURL),
 	).Scan(
-		&user.ID, 
-		&firstName, 
-		&lastName, 
+		&user.ID,
+		&firstName,
+		&lastName,
 		&user.PhoneNumber,
-		&user.Blocked, 
+		&user.Blocked,
 		&user.RegistrationDate,
-		&gender, 
+		&gender,
 		&dateOfBirth,
-		&location, 
+		&location,
 		&email,
 		&profilePhotoURL,
 	)
@@ -243,18 +243,18 @@ func (r PostgresUserRepository) UpdateUser(request *domain.UpdateUserRequest) (*
 	var dateOfBirth sql.NullTime
 
 	err = stmt.QueryRow(queryParams...).Scan(
-        &user.ID, 
-		&firstName, 
-		&lastName, 
-		&user.PhoneNumber, 
-		&user.Blocked, 
-		&gender, 
-		&user.RegistrationDate, 
-		&dateOfBirth, 
-		&location, 
-		&email, 
+		&user.ID,
+		&firstName,
+		&lastName,
+		&user.PhoneNumber,
+		&user.Blocked,
+		&gender,
+		&user.RegistrationDate,
+		&dateOfBirth,
+		&location,
+		&email,
 		&profilePhotoURL,
-    )
+	)
 	if err != nil {
 		slog.Error("error executing  query: %v", utils.Err(err))
 		return nil, err
@@ -268,10 +268,10 @@ func (r PostgresUserRepository) UpdateUser(request *domain.UpdateUserRequest) (*
 	user.ProfilePhotoURL = utils.HandleNullString(profilePhotoURL)
 
 	if dateOfBirth.Valid {
-    	user.DateOfBirth.Year = int32(dateOfBirth.Time.Year())
-    	user.DateOfBirth.Month = int32(dateOfBirth.Time.Month())
-    	user.DateOfBirth.Day = int32(dateOfBirth.Time.Day())
-}
+		user.DateOfBirth.Year = int32(dateOfBirth.Time.Year())
+		user.DateOfBirth.Month = int32(dateOfBirth.Time.Month())
+		user.DateOfBirth.Day = int32(dateOfBirth.Time.Day())
+	}
 
 	return &user, nil
 }
@@ -289,12 +289,12 @@ func (r PostgresUserRepository) DeleteUser(id int32) error {
 	}
 
 	stmt, err := r.DB.Prepare(`DELETE FROM users WHERE id = $1`)
-    if err != nil {
+	if err != nil {
 		slog.Error("error preparing query: %v", err)
-        return err
-    }
-    defer stmt.Close()
-	
+		return err
+	}
+	defer stmt.Close()
+
 	_, err = stmt.Exec(id)
 	if err != nil {
 		slog.Error("error executing query: %v", utils.Err(err))
@@ -316,43 +316,43 @@ func (r *PostgresUserRepository) BlockUser(id int32) error {
 		return fmt.Errorf("user with ID %d not found", id)
 	}
 
-    stmt, err := r.DB.Prepare("UPDATE users SET blocked = true WHERE id = $1")
-    if err != nil {
-        slog.Error("error preparing query: %v", utils.Err(err))
-        return err
-    }
-    defer stmt.Close()
-
-    _, err = stmt.Exec(id)
-    if err != nil {
-        slog.Error("error executing query: %v", utils.Err(err))
+	stmt, err := r.DB.Prepare("UPDATE users SET blocked = true WHERE id = $1")
+	if err != nil {
+		slog.Error("error preparing query: %v", utils.Err(err))
 		return err
-    }
+	}
+	defer stmt.Close()
 
-    return nil
+	_, err = stmt.Exec(id)
+	if err != nil {
+		slog.Error("error executing query: %v", utils.Err(err))
+		return err
+	}
+
+	return nil
 }
 
 func (r *PostgresUserRepository) UnblockUser(id int32) error {
-    stmt, err := r.DB.Prepare("UPDATE users SET blocked = false WHERE id = $1")
-    if err != nil {
-        slog.Error("error preparing query: %v", utils.Err(err))
-        return err
-    }
-    defer stmt.Close()
-
-    _, err = stmt.Exec(id)
-    if err != nil {
-        slog.Error("error executing query: %v", utils.Err(err))
+	stmt, err := r.DB.Prepare("UPDATE users SET blocked = false WHERE id = $1")
+	if err != nil {
+		slog.Error("error preparing query: %v", utils.Err(err))
 		return err
-    }
+	}
+	defer stmt.Close()
 
-    return nil
+	_, err = stmt.Exec(id)
+	if err != nil {
+		slog.Error("error executing query: %v", utils.Err(err))
+		return err
+	}
+
+	return nil
 }
 
 func (r *PostgresUserRepository) SearchUsers(query string, page, pageSize int) (*domain.UsersList, error) {
-    offset := (page - 1) * pageSize
+	offset := (page - 1) * pageSize
 
-    searchQuery := `
+	searchQuery := `
         SELECT id, first_name, last_name, phone_number, blocked,
         registration_date, gender, date_of_birth, location,
         email, profile_photo_url
@@ -362,33 +362,33 @@ func (r *PostgresUserRepository) SearchUsers(query string, page, pageSize int) (
         LIMIT $2 OFFSET $3
     `
 
-    stmt, err := r.DB.Prepare(searchQuery)
-    if err != nil {
-        slog.Error("Error preparing search query: %v", utils.Err(err))
-        return nil, err
-    }
-    defer stmt.Close()
+	stmt, err := r.DB.Prepare(searchQuery)
+	if err != nil {
+		slog.Error("Error preparing search query: %v", utils.Err(err))
+		return nil, err
+	}
+	defer stmt.Close()
 
-    rows, err := stmt.QueryContext(context.TODO(), "%"+query+"%", pageSize, offset)
-    if err != nil {
-        slog.Error("Error executing search query: %v", utils.Err(err))
-        return nil, err
-    }
-    defer rows.Close()
+	rows, err := stmt.QueryContext(context.TODO(), "%"+query+"%", pageSize, offset)
+	if err != nil {
+		slog.Error("Error executing search query: %v", utils.Err(err))
+		return nil, err
+	}
+	defer rows.Close()
 
-    userList := domain.UsersList{Users: make([]domain.CommonUserResponse, 0)}
-    for rows.Next() {
-        user, err := utils.ScanUserRow(rows)
-        if err != nil {
-            return nil, err
-        }
-        userList.Users = append(userList.Users, user)
-    }
+	userList := domain.UsersList{Users: make([]domain.CommonUserResponse, 0)}
+	for rows.Next() {
+		user, err := utils.ScanUserRow(rows)
+		if err != nil {
+			return nil, err
+		}
+		userList.Users = append(userList.Users, user)
+	}
 
-    if err := rows.Err(); err != nil {
-        slog.Error("Error iterating over user rows: %v", utils.Err(err))
-        return nil, err
-    }
+	if err := rows.Err(); err != nil {
+		slog.Error("Error iterating over user rows: %v", utils.Err(err))
+		return nil, err
+	}
 
-    return &userList, nil
+	return &userList, nil
 }
