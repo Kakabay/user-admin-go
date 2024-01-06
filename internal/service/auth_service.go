@@ -30,32 +30,26 @@ func (s *AdminAuthService) LoginAdmin(username, password string) (string, string
 		return "", "", domain.ErrInvalidCredentials
 	}
 
-	accessToken, err := s.AdminAuthRepository.GenerateAccessToken(admin)
+	accessToken, refreshToken, err := s.AdminAuthRepository.GenerateTokenPair(admin)
 	if err != nil {
-		slog.Error("Error generating access token:", utils.Err(err))
-		return "", "", err
-	}
-
-	refreshToken, err := s.AdminAuthRepository.GenerateRefreshToken(admin)
-	if err != nil {
-		slog.Error("Error generating refresh token:", utils.Err(err))
+		slog.Error("Error generating token pair:", utils.Err(err))
 		return "", "", err
 	}
 
 	return accessToken, refreshToken, nil
 }
 
-func (s *AdminAuthService) RefreshTokens(refreshToken string) (string, error) {
+func (s *AdminAuthService) RefreshTokens(refreshToken string) (string, string, error) {
 	claims, err := s.AdminAuthRepository.ValidateRefreshToken(refreshToken)
 	if err != nil {
 		slog.Error("Error validating refresh token:", utils.Err(err))
-		return "", err
+		return "", "", err
 	}
 
 	adminIDFloat, ok := claims["adminID"].(float64)
 	if !ok {
 		slog.Error("AdminID not found or not a number in refresh token claims")
-		return "", domain.ErrInvalidRefreshToken
+		return "", "", domain.ErrInvalidRefreshToken
 	}
 
 	// Convert adminID to int
@@ -64,14 +58,14 @@ func (s *AdminAuthService) RefreshTokens(refreshToken string) (string, error) {
 	admin, err := s.AdminAuthRepository.GetAdminByID(adminID)
 	if err != nil {
 		slog.Error("Error getting admin by ID:", utils.Err(err))
-		return "", err
+		return "", "", err
 	}
 
-	newAccessToken, err := s.AdminAuthRepository.GenerateAccessToken(admin)
+	newAccessToken, newRefreshToken, err := s.AdminAuthRepository.GenerateTokenPair(admin)
 	if err != nil {
-		slog.Error("Error generating access token:", utils.Err(err))
-		return "", err
+		slog.Error("Error generating token pair:", utils.Err(err))
+		return "", "", err
 	}
 
-	return newAccessToken, nil
+	return newAccessToken, newRefreshToken, nil
 }

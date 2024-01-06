@@ -21,7 +21,7 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	AccessToken string `json:"access_token"`
+	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 }
 
@@ -51,7 +51,7 @@ func (h *AdminAuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	loginResponse := LoginResponse{
-		AccessToken: accessToken,
+		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}
 	respondJSON(w, http.StatusOK, loginResponse)
@@ -64,14 +64,18 @@ func (h *AdminAuthHandler) RefreshTokensHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	newAccessToken, err := h.AdminAuthService.RefreshTokens(refreshToken)
+	newAccessToken, newRefreshToken, err := h.AdminAuthService.RefreshTokens(refreshToken)
 	if err != nil {
 		slog.Error("Error refreshing tokens:", err)
 		Error(w, http.StatusUnauthorized, "Invalid refresh token")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, map[string]string{"access_token": newAccessToken})
+	respondJSON(w, http.StatusOK, map[string]string{
+		"access_token":  newAccessToken,
+		"refresh_token": newRefreshToken,
+	},
+	)
 }
 
 func Error(w http.ResponseWriter, status int, message string) {

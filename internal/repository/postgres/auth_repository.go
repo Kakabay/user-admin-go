@@ -49,7 +49,23 @@ func (r *PostgresAdminAuthRepository) GetAdminByUsername(username string) (*doma
 	return &admin, nil
 }
 
-func (r *PostgresAdminAuthRepository) GenerateAccessToken(admin *domain.Admin) (string, error) {
+func (r *PostgresAdminAuthRepository) GenerateTokenPair(admin *domain.Admin) (string, string, error) {
+	// Generate a new access token
+	accessToken, err := r.generateAccessToken(admin)
+	if err != nil {
+		return "", "", err
+	}
+
+	// Generate a new refresh token
+	refreshToken, err := r.generateRefreshToken(admin)
+	if err != nil {
+		return "", "", err
+	}
+
+	return accessToken, refreshToken, nil
+}
+
+func (r *PostgresAdminAuthRepository) generateAccessToken(admin *domain.Admin) (string, error) {
 	claims := jwt.MapClaims{
 		"id":   admin.ID,
 		"role": admin.Role,
@@ -67,7 +83,7 @@ func (r *PostgresAdminAuthRepository) GenerateAccessToken(admin *domain.Admin) (
 	return tokenString, nil
 }
 
-func (r *PostgresAdminAuthRepository) GenerateRefreshToken(admin *domain.Admin) (string, error) {
+func (r *PostgresAdminAuthRepository) generateRefreshToken(admin *domain.Admin) (string, error) {
 	refreshTokenID := uuid.New().String()
 
 	refreshClaims := jwt.MapClaims{
@@ -85,12 +101,12 @@ func (r *PostgresAdminAuthRepository) GenerateRefreshToken(admin *domain.Admin) 
 	}
 
 	query := `
-		UPDATE admins
-		SET refresh_token = $1,
-			refresh_token_created_at = TO_TIMESTAMP($2),
-			refresh_token_expiration_time = TO_TIMESTAMP($3)
-		WHERE id = $4
-	`
+        UPDATE admins
+        SET refresh_token = $1,
+            refresh_token_created_at = TO_TIMESTAMP($2),
+            refresh_token_expiration_time = TO_TIMESTAMP($3)
+        WHERE id = $4
+    `
 
 	_, err = r.DB.Exec(query, refreshTokenString, refreshClaims["iat"].(int64), refreshClaims["exp"].(int64), admin.ID)
 	if err != nil {
@@ -110,7 +126,7 @@ func (r *PostgresAdminAuthRepository) ValidateRefreshToken(refreshToken string) 
 	})
 
 	if err != nil || !token.Valid {
-		slog.Error("Refresh token validation error: %v", err)
+		slog.Error("Refresh token validation error: %v !BADKEY=\"%s\"", err, r.JWTConfig.RefreshSecretKey)
 		return nil, fmt.Errorf("refresh token validation error: %v", err)
 	}
 
