@@ -15,7 +15,7 @@ import (
 )
 
 type PostgresAdminAuthRepository struct {
-	DB *sql.DB
+	DB        *sql.DB
 	JWTConfig config.JWT
 }
 
@@ -51,9 +51,9 @@ func (r *PostgresAdminAuthRepository) GetAdminByUsername(username string) (*doma
 
 func (r *PostgresAdminAuthRepository) GenerateAccessToken(admin *domain.Admin) (string, error) {
 	claims := jwt.MapClaims{
-		"id": admin.ID,
+		"id":   admin.ID,
 		"role": admin.Role,
-		"exp": time.Now().Add(30 * time.Minute).Unix(), // Token expiration time
+		"exp":  time.Now().Add(30 * time.Minute).Unix(), // Token expiration time
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -63,7 +63,7 @@ func (r *PostgresAdminAuthRepository) GenerateAccessToken(admin *domain.Admin) (
 		slog.Error("Error generating access token: %v", utils.Err(err))
 		return "", err
 	}
-	
+
 	return tokenString, nil
 }
 
@@ -74,6 +74,7 @@ func (r *PostgresAdminAuthRepository) GenerateRefreshToken(admin *domain.Admin) 
 		"id":      refreshTokenID,
 		"adminID": admin.ID,
 		"exp":     time.Now().Add(7 * 24 * time.Hour).Unix(),
+		"iat":     time.Now().Unix(),
 	}
 
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
@@ -84,12 +85,16 @@ func (r *PostgresAdminAuthRepository) GenerateRefreshToken(admin *domain.Admin) 
 	}
 
 	query := `
-		INSERT INTO refresh_tokens (admin_id, token, expiration_time)
-		VALUES ($1, $2, TO_TIMESTAMP($3))
+		UPDATE admins
+		SET refresh_token = $1,
+			refresh_token_created_at = TO_TIMESTAMP($2),
+			refresh_token_expiration_time = TO_TIMESTAMP($3)
+		WHERE id = $4
 	`
-	_, err = r.DB.Exec(query, admin.ID, refreshTokenString, refreshClaims["exp"])
+
+	_, err = r.DB.Exec(query, refreshTokenString, refreshClaims["iat"].(int64), refreshClaims["exp"].(int64), admin.ID)
 	if err != nil {
-		slog.Error("Failed to save generated refresh tokens in database", utils.Err(err))
+		slog.Error("Failed to update refresh token in database", utils.Err(err))
 		return "", err
 	}
 
@@ -146,7 +151,7 @@ func (r *PostgresAdminAuthRepository) GetAdminByID(adminID int) (*domain.Admin, 
 
 func (r *PostgresAdminAuthRepository) DeleteRefreshToken(refreshToken string) error {
 	query := `
-		DELETE FROM refresh_tokens
+		DELETE FROM admins
 		WHERE token = $1
 	`
 
