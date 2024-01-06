@@ -137,12 +137,19 @@ func (r *PostgresUserRepository) CreateUser(request *domain.CreateUserRequest) (
 	var firstName, lastName, gender, location, email, profilePhotoURL sql.NullString
 	var dateOfBirth sql.NullTime
 
+	dateOfBirthValue := time.Date(
+		int(request.DateOfBirth.Year),
+		time.Month(request.DateOfBirth.Month),
+		int(request.DateOfBirth.Day),
+		0, 0, 0, 0, time.UTC,
+	)
+
 	err = stmt.QueryRow(
 		utils.NullIfEmptyStr(request.FirstName),
 		utils.NullIfEmptyStr(request.LastName),
 		request.PhoneNumber,
 		utils.NullIfEmptyStr(request.Gender),
-		utils.NullIfEmptyDate(request.DateOfBirth),
+		dateOfBirthValue,
 		utils.NullIfEmptyStr(request.Location),
 		utils.NullIfEmptyStr(request.Email),
 		utils.NullIfEmptyStr(request.ProfilePhotoURL),
