@@ -95,7 +95,6 @@ func (r *PostgresAdminAuthRepository) generateRefreshToken(admin *domain.Admin) 
 		"id":      refreshTokenID,
 		"adminID": admin.ID,
 		"exp":     time.Now().Add(refreshTokenExpiration).Unix(),
-		"iat":     time.Now().Unix(),
 	}
 
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
@@ -108,12 +107,12 @@ func (r *PostgresAdminAuthRepository) generateRefreshToken(admin *domain.Admin) 
 	query := `
         UPDATE admins
         SET refresh_token = $1,
-            refresh_token_created_at = TO_TIMESTAMP($2),
-            refresh_token_expiration_time = TO_TIMESTAMP($3)
-        WHERE id = $4
+            refresh_token_created_at = CURRENT_TIMESTAMP,
+            refresh_token_expiration_time = TO_TIMESTAMP($2)
+        WHERE id = $3
     `
 
-	_, err = r.DB.Exec(query, refreshTokenString, refreshClaims["iat"].(int64), refreshClaims["exp"].(int64), admin.ID)
+	_, err = r.DB.Exec(query, refreshTokenString, refreshClaims["exp"].(int64), admin.ID)
 	if err != nil {
 		slog.Error("Failed to update refresh token in database", utils.Err(err))
 		return "", err
@@ -168,20 +167,4 @@ func (r *PostgresAdminAuthRepository) GetAdminByID(adminID int) (*domain.Admin, 
 	}
 
 	return &admin, nil
-}
-
-// in case if I need to delete refresh tokens
-func (r *PostgresAdminAuthRepository) DeleteRefreshToken(refreshToken string) error {
-	query := `
-		DELETE FROM admins
-		WHERE refresh_token = $1
-	`
-
-	_, err := r.DB.Exec(query, refreshToken)
-	if err != nil {
-		slog.Error("Failed to delete refresh token from database", utils.Err(err))
-		return err
-	}
-
-	return nil
 }
