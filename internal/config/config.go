@@ -9,7 +9,7 @@ import (
 )
 
 type Config struct {
-	Env string `yaml:"env"`
+	Env        string `yaml:"env"`
 	Database   `yaml:"database"`
 	HTTPServer `yaml:"http_server"`
 	JWT
@@ -31,7 +31,7 @@ type HTTPServer struct {
 }
 
 type JWT struct {
-	AccessSecretKey string `yaml:"access_secret_key"`
+	AccessSecretKey  string `yaml:"access_secret_key"`
 	RefreshSecretKey string `yaml:"refresh_secret_key"`
 }
 
