@@ -21,8 +21,6 @@ func NewPostgresAdminRepository(db *sql.DB) *PostgresAdminRepository {
 	return &PostgresAdminRepository{DB: db}
 }
 
-// TODO: UPDATE ADMINS
-
 func (r *PostgresAdminRepository) GetAllAdmins(page, pageSize int) (*domain.AdminsList, error) {
 	offset := (page - 1) * pageSize
 
