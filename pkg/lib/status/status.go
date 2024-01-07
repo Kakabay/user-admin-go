@@ -8,4 +8,5 @@ const (
 	NotFound            = http.StatusNotFound
 	OK                  = http.StatusOK
 	InternalServerError = http.StatusInternalServerError
+	Forbidden           = http.StatusForbidden
 )
