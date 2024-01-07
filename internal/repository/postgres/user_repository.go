@@ -114,6 +114,8 @@ func (r *PostgresUserRepository) GetUserByID(id int32) (*domain.GetUserResponse,
 	return &user, nil
 }
 
+// TODO: HASH THE PASSWORDS!!!
+
 func (r *PostgresUserRepository) CreateUser(request *domain.CreateUserRequest) (*domain.CreateUserResponse, error) {
 	if !utils.IsValidPhoneNumber(request.PhoneNumber) {
 		return nil, fmt.Errorf("invalid phone number format")

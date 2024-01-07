@@ -9,4 +9,5 @@ const (
 	OK                  = http.StatusOK
 	InternalServerError = http.StatusInternalServerError
 	Forbidden           = http.StatusForbidden
+	Conflict            = http.StatusConflict
 )

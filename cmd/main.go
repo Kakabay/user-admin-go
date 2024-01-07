@@ -35,6 +35,20 @@ func main() {
 
 	mainRouter := chi.NewRouter()
 
+	adminRouterWithoutAuth := chi.NewRouter()
+	mainRouter.Route("/api/admin", func(r chi.Router) {
+		r.Mount("/", adminRouterWithoutAuth)
+	})
+
+	adminRepositoryWithoutAuth := repository.NewPostgresAdminRepository(db.GetDB())
+	adminServiceWithoutAuth := service.NewAdminService(adminRepositoryWithoutAuth)
+	adminHandlerWithoutAuth := handlers.AdminHandler{
+		AdminService: adminServiceWithoutAuth,
+		Router:       adminRouterWithoutAuth,
+	}
+
+	adminRouterWithoutAuth.Post("/", adminHandlerWithoutAuth.CreateAdminHandler)
+
 	authRouter := chi.NewRouter()
 	mainRouter.Route("/auth", func(r chi.Router) {
 		r.Mount("/", authRouter)
