@@ -7,3 +7,9 @@ const (
 	RefreshTokenNotProvided = "Refresh token not provided"
 	InvalidRefreshToken     = "Invalid refresh token"
 )
+
+const (
+	InternalServerError = "Internal server error"
+	InvalidID           = "Invalid ID"
+	InvalidRequestBody  = "Invalid request body"
+)
