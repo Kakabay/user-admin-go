@@ -75,7 +75,7 @@ func validateToken(tokenString string, cfg *config.Config, isRefreshToken bool) 
 	})
 
 	if err != nil || !token.Valid {
-		slog.Error("Token validation error: %v", err)
+		slog.Error("Token validation error: %v", utils.Err(err))
 		return nil, fmt.Errorf("token validation error: %v", err)
 	}
 

@@ -122,6 +122,49 @@ func (r *PostgresAdminAuthRepository) generateRefreshToken(admin *domain.Admin) 
 }
 
 func (r *PostgresAdminAuthRepository) ValidateRefreshToken(refreshToken string) (map[string]interface{}, error) {
+	// Retrieve the claims from the token without validation
+	token, _, err := new(jwt.Parser).ParseUnverified(refreshToken, jwt.MapClaims{})
+	if err != nil {
+		slog.Error("Error parsing refresh token: %v", err)
+		return nil, fmt.Errorf("error parsing refresh token: %v", err)
+	}
+
+	// Extract the adminID claim from the token
+	adminIDClaim, ok := token.Claims.(jwt.MapClaims)["adminID"]
+	if !ok {
+		slog.Error("AdminID claim not found in refresh token")
+		return nil, fmt.Errorf("adminID claim not found in refresh token")
+	}
+
+	// Check if the refresh token exists in the database for the specified adminID
+	query := `
+        SELECT 1
+        FROM admins
+        WHERE refresh_token = $1 AND id = $2
+    `
+
+	var exists bool
+	err = r.DB.QueryRow(query, refreshToken, adminIDClaim).Scan(&exists)
+	if err != nil {
+		slog.Error("Error checking refresh token existence in database: %v", utils.Err(err))
+		return nil, fmt.Errorf("error checking refresh token existence in database: %v", err)
+	}
+
+	if !exists {
+		slog.Error("Refresh token not found in the database")
+		return nil, fmt.Errorf("refresh token not found in the database")
+	}
+
+	// Now, proceed with the full validation of the refresh token
+	claims, err := r.validateRefreshToken(refreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return claims, nil
+}
+
+func (r *PostgresAdminAuthRepository) validateRefreshToken(refreshToken string) (map[string]interface{}, error) {
 	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
