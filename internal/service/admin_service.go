@@ -27,14 +27,15 @@ func (s *AdminService) CreateAdmin(request *domain.CreateAdminRequest) (*domain.
 }
 
 /*
-func (s *AdminService) UpdateAdmin(request *domain.Admin) (*domain.Admin, error) {
-	return s.AdminRepository.UpdateAdmin(request)
-}
-
+	func (s *AdminService) UpdateAdmin(request *domain.Admin) (*domain.Admin, error) {
+		return s.AdminRepository.UpdateAdmin(request)
+	}
+*/
 func (s *AdminService) DeleteAdmin(id int32) error {
 	return s.AdminRepository.DeleteAdmin(id)
 }
 
+/*
 func (s *AdminService) SearchAdmins(query string, page, pageSize int) (*domain.AdminsList, error) {
 	return s.AdminRepository.SearchAdmins(query, page, pageSize)
 }

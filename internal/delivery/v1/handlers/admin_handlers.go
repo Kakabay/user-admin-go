@@ -6,8 +6,10 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 	"user-admin/internal/domain"
 	"user-admin/internal/service"
+	"user-admin/pkg/lib/errors"
 	"user-admin/pkg/lib/status"
 	"user-admin/pkg/lib/utils"
 
@@ -65,4 +67,29 @@ func (h *AdminHandler) CreateAdminHandler(w http.ResponseWriter, r *http.Request
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(createdAdmin)
+}
+
+func (h *AdminHandler) DeleteAdminHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		utils.RespondWithErrorJSON(w, status.BadRequest, errors.InvalidID)
+		return
+	}
+
+	if err := h.AdminService.DeleteAdmin(int32(id)); err != nil {
+		slog.Error("Error deleting admin: ", utils.Err(err))
+
+		if strings.Contains(err.Error(), "not found") {
+			errorMessage := fmt.Sprintf("Admin with ID %d not found", id)
+			utils.RespondWithErrorJSON(w, status.NotFound, errorMessage)
+			return
+		}
+
+		utils.RespondWithErrorJSON(w, status.InternalServerError, fmt.Sprintf("Error deleting admin: %s", err))
+		return
+	}
+
+	w.WriteHeader(status.OK)
+	w.Write([]byte("Admin deleted successfully"))
 }

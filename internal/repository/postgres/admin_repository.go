@@ -104,8 +104,7 @@ func (r *PostgresAdminRepository) CreateAdmin(request *domain.CreateAdminRequest
 	return &admin, nil
 }
 
-/*
-func (r *PostgresAdminRepository) DeleteAdmin(id int) error {
+func (r *PostgresAdminRepository) DeleteAdmin(id int32) error {
 	var exists bool
 	err := r.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM admins WHERE id = $1)`, id).Scan(&exists)
 	if err != nil {
@@ -132,4 +131,3 @@ func (r *PostgresAdminRepository) DeleteAdmin(id int) error {
 
 	return nil
 }
-*/

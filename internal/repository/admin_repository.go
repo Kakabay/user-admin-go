@@ -7,6 +7,6 @@ type AdminRepository interface {
 	GetAdminByID(id int32) (*domain.CommonAdminResponse, error)
 	CreateAdmin(request *domain.CreateAdminRequest) (*domain.CommonAdminResponse, error)
 	// UpdateAdmin(request *domain.Admin) (*domain.Admin, error)
-	// DeleteAdmin(id int32) error
+	DeleteAdmin(id int32) error
 	// SearchAdmins(query string, page, pageSize int) (*domain.AdminsList, error)
 }
