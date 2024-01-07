@@ -50,6 +50,7 @@ func main() {
 	adminRouterWithoutAuth.Get("/", adminHandlerWithoutAuth.GetAllAdminsHandler)
 	adminRouterWithoutAuth.Get("/{id}", adminHandlerWithoutAuth.GetAdminByID)
 	adminRouterWithoutAuth.Post("/", adminHandlerWithoutAuth.CreateAdminHandler)
+	adminRouterWithoutAuth.Put("/{id}", adminHandlerWithoutAuth.UpdateAdminHandler)
 	adminRouterWithoutAuth.Delete("/{id}", adminHandlerWithoutAuth.DeleteAdminHandler)
 	adminRouterWithoutAuth.Get("/search", adminHandlerWithoutAuth.SearchAdminsHandler)
 

@@ -29,6 +29,13 @@ type CreateAdminRequest struct {
 	Role     string `json:"role"`
 }
 
+type UpdateAdminRequest struct {
+	ID       int32  `json:"id"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Role     string `json:"role"`
+}
+
 type CommonAdminResponse struct {
 	ID       int32  `json:"id"`
 	Username string `json:"username"`

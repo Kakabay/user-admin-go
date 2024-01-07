@@ -110,6 +110,36 @@ func (h *AdminHandler) CreateAdminHandler(w http.ResponseWriter, r *http.Request
 	json.NewEncoder(w).Encode(createdAdmin)
 }
 
+func (h *AdminHandler) UpdateAdminHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		utils.RespondWithErrorJSON(w, status.BadRequest, errors.InvalidID)
+		return
+	}
+
+	var updateAdminRequest domain.UpdateAdminRequest
+
+	err = json.NewDecoder(r.Body).Decode(&updateAdminRequest)
+	if err != nil {
+		utils.RespondWithErrorJSON(w, status.BadRequest, errors.InvalidRequestBody)
+		return
+	}
+
+	updateAdminRequest.ID = int32(id)
+
+	admin, err := h.AdminService.UpdateAdmin(&updateAdminRequest)
+	if err != nil {
+		slog.Error("Error updating admin: ", utils.Err(err))
+		utils.RespondWithErrorJSON(w, status.InternalServerError, fmt.Sprintf("error updating admin: %v", err))
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status.OK)
+	json.NewEncoder(w).Encode(admin)
+}
+
 func (h *AdminHandler) DeleteAdminHandler(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)

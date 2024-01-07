@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
+	"strconv"
+	"strings"
 	"user-admin/internal/domain"
 	"user-admin/pkg/lib/utils"
 
@@ -19,7 +21,6 @@ func NewPostgresAdminRepository(db *sql.DB) *PostgresAdminRepository {
 	return &PostgresAdminRepository{DB: db}
 }
 
-// TODO: SEARCH ADMINS
 // TODO: UPDATE ADMINS
 
 func (r *PostgresAdminRepository) GetAllAdmins(page, pageSize int) (*domain.AdminsList, error) {
@@ -139,6 +140,59 @@ func (r *PostgresAdminRepository) CreateAdmin(request *domain.CreateAdminRequest
 	)
 	if err != nil {
 		slog.Error("error executing query: %v", utils.Err(err))
+		return nil, err
+	}
+
+	return &admin, nil
+}
+
+func (r *PostgresAdminRepository) UpdateAdmin(request *domain.UpdateAdminRequest) (*domain.CommonAdminResponse, error) {
+	updateQuery := `UPDATE admins SET`
+	var queryParams []interface{}
+	var queryArgs []string
+
+	if request.Username != "" {
+		queryArgs = append(queryArgs, "username = $"+strconv.Itoa(len(queryParams)+1))
+		queryParams = append(queryParams, request.Username)
+	}
+
+	if request.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
+		if err != nil {
+			slog.Error("error hashing new password: %v", utils.Err(err))
+			return nil, err
+		}
+
+		queryArgs = append(queryArgs, "password = $"+strconv.Itoa(len(queryParams)+1))
+		queryParams = append(queryParams, hashedPassword)
+	}
+
+	if request.Role != "" {
+		queryArgs = append(queryArgs, "role = $"+strconv.Itoa(len(queryParams)+1))
+		queryParams = append(queryParams, request.Role)
+	}
+
+	updateQuery += " " + strings.Join(queryArgs, ", ") + " WHERE id = $" + strconv.Itoa(len(queryParams)+1)
+	queryParams = append(queryParams, request.ID)
+
+	updateQuery += " RETURNING id, username, role"
+
+	stmt, err := r.DB.Prepare(updateQuery)
+	if err != nil {
+		slog.Error("error preparing query: %v", utils.Err(err))
+		return nil, err
+	}
+	defer stmt.Close()
+
+	var admin domain.CommonAdminResponse
+
+	err = stmt.QueryRow(queryParams...).Scan(
+		&admin.ID,
+		&admin.Username,
+		&admin.Role,
+	)
+	if err != nil {
+		slog.Error("error executing  query: %v", utils.Err(err))
 		return nil, err
 	}
 
