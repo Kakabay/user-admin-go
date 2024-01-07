@@ -19,7 +19,6 @@ func NewPostgresAdminRepository(db *sql.DB) *PostgresAdminRepository {
 	return &PostgresAdminRepository{DB: db}
 }
 
-// TODO: GET ALL ADMINS
 // TODO: SEARCH ADMINS
 // TODO: UPDATE ADMINS
 
@@ -172,4 +171,47 @@ func (r *PostgresAdminRepository) DeleteAdmin(id int32) error {
 	}
 
 	return nil
+}
+
+func (r *PostgresAdminRepository) SearchAdmins(query string, page, pageSize int) (*domain.AdminsList, error) {
+	offset := (page - 1) * pageSize
+
+	searchQuery := `
+        SELECT id, username, role
+        FROM admins
+        WHERE username ILIKE $1 OR role ILIKE $1
+        ORDER BY id
+        LIMIT $2 OFFSET $3
+    `
+
+	stmt, err := r.DB.Prepare(searchQuery)
+	if err != nil {
+		slog.Error("Error preparing search query: %v", utils.Err(err))
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.QueryContext(context.TODO(), "%"+query+"%", pageSize, offset)
+	if err != nil {
+		slog.Error("Error executing search query: %v", utils.Err(err))
+		return nil, err
+	}
+	defer rows.Close()
+
+	adminList := domain.AdminsList{Admins: make([]domain.CommonAdminResponse, 0)}
+	for rows.Next() {
+		var admin domain.CommonAdminResponse
+		if err := rows.Scan(&admin.ID, &admin.Username, &admin.Role); err != nil {
+			slog.Error("Error scanning admin row: %v", utils.Err(err))
+			return nil, err
+		}
+		adminList.Admins = append(adminList.Admins, admin)
+	}
+
+	if err := rows.Err(); err != nil {
+		slog.Error("Error iterating over user rows: %v", utils.Err(err))
+		return nil, err
+	}
+
+	return &adminList, nil
 }

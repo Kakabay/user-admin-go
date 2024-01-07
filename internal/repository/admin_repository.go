@@ -8,5 +8,5 @@ type AdminRepository interface {
 	CreateAdmin(request *domain.CreateAdminRequest) (*domain.CommonAdminResponse, error)
 	// UpdateAdmin(request *domain.Admin) (*domain.Admin, error)
 	DeleteAdmin(id int32) error
-	// SearchAdmins(query string, page, pageSize int) (*domain.AdminsList, error)
+	SearchAdmins(query string, page, pageSize int) (*domain.AdminsList, error)
 }

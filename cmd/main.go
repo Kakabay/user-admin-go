@@ -51,6 +51,7 @@ func main() {
 	adminRouterWithoutAuth.Get("/{id}", adminHandlerWithoutAuth.GetAdminByID)
 	adminRouterWithoutAuth.Post("/", adminHandlerWithoutAuth.CreateAdminHandler)
 	adminRouterWithoutAuth.Delete("/{id}", adminHandlerWithoutAuth.DeleteAdminHandler)
+	adminRouterWithoutAuth.Get("/search", adminHandlerWithoutAuth.SearchAdminsHandler)
 
 	authRouter := chi.NewRouter()
 	mainRouter.Route("/auth", func(r chi.Router) {

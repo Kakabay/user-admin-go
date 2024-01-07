@@ -134,3 +134,49 @@ func (h *AdminHandler) DeleteAdminHandler(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(status.OK)
 	w.Write([]byte("Admin deleted successfully"))
 }
+
+func (h *AdminHandler) SearchAdminsHandler(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query().Get("query")
+	if query == "" {
+		utils.RespondWithErrorJSON(w, status.BadRequest, "Search query is required")
+		return
+	}
+
+	page, err := strconv.Atoi(r.URL.Query().Get("page"))
+	if err != nil || page <= 0 {
+		page = 1
+	}
+
+	pageSize, err := strconv.Atoi(r.URL.Query().Get("pageSize"))
+	if err != nil || pageSize <= 0 {
+		pageSize = 8 // Default page size
+	}
+
+	admins, err := h.AdminService.SearchAdmins(query, page, pageSize)
+	if err != nil {
+		slog.Error("Error searching admins: ", utils.Err(err))
+		utils.RespondWithErrorJSON(w, status.InternalServerError, errors.InternalServerError)
+		return
+	}
+
+	previousPage := page - 1
+	if previousPage < 1 {
+		previousPage = 1
+	}
+
+	nextPage := page + 1
+
+	response := struct {
+		Admins      *domain.AdminsList `json:"admins"`
+		CurrentPage int                `json:"currentPage"`
+		PrevPage    int                `json:"previousPage"`
+		NextPage    int                `json:"nextPage"`
+	}{
+		Admins:      admins,
+		CurrentPage: page,
+		PrevPage:    previousPage,
+		NextPage:    nextPage,
+	}
+
+	utils.RespondWithJSON(w, status.OK, response)
+}
