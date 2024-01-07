@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log/slog"
@@ -22,41 +23,35 @@ func NewPostgresAdminRepository(db *sql.DB) *PostgresAdminRepository {
 // TODO: SEARCH ADMINS
 // TODO: UPDATE ADMINS
 
-/*
-	func (r *PostgresAdminRepository) GetAdminByID(id int) (*domain.Admin, error) {
-		stmt, err := r.DB.Prepare(`
-			SELECT id, username, password, role
-			FROM admins
-			WHERE id = $1
-		`)
-		if err != nil {
-			slog.Error("error preparing query: %v", utils.Err(err))
-			return nil, err
-		}
-		defer stmt.Close()
-
-		row := stmt.QueryRowContext(context.TODO(), id)
-
-		var admin domain.Admin
-		var username, password, role sql.NullString
-		err = row.Scan(
-			&admin.ID,
-			&username,
-			&password,
-			&role,
-		)
-		if err != nil {
-			slog.Error("error scanning admin row: %v", utils.Err(err))
-			return nil, err
-		}
-
-		admin.Username = utils.HandleNullString(username)
-		admin.Password = utils.HandleNullString(password)
-		admin.Role = utils.HandleNullString(role)
-
-		return &admin, nil
+func (r *PostgresAdminRepository) GetAdminByID(id int32) (*domain.CommonAdminResponse, error) {
+	stmt, err := r.DB.Prepare(`
+		SELECT id, username, role
+		FROM admins
+		WHERE id = $1
+	`)
+	if err != nil {
+		slog.Error("error preparing query: %v", utils.Err(err))
+		return nil, err
 	}
-*/
+	defer stmt.Close()
+
+	row := stmt.QueryRowContext(context.TODO(), id)
+
+	var admin domain.CommonAdminResponse
+
+	err = row.Scan(
+		&admin.ID,
+		&admin.Username,
+		&admin.Role,
+	)
+	if err != nil {
+		slog.Error("error scanning admin row: %v", utils.Err(err))
+		return nil, err
+	}
+
+	return &admin, nil
+}
+
 func (r *PostgresAdminRepository) CreateAdmin(request *domain.CreateAdminRequest) (*domain.CommonAdminResponse, error) {
 	if request.Username == "" || request.Password == "" || request.Role == "" {
 		return nil, fmt.Errorf("username, password, and role are required fields")

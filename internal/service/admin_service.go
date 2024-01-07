@@ -17,11 +17,11 @@ func NewAdminService(adminRepository repository.AdminRepository) *AdminService {
 	func (s *AdminService) GetAllAdmins(page, pageSize int) (*domain.AdminsList, error) {
 		return s.AdminRepository.GetAllAdmins(page, pageSize)
 	}
-
-	func (s *AdminService) GetAdminByID(id int32) (*domain.Admin, error) {
-		return s.AdminRepository.GetAdminByID(id)
-	}
 */
+func (s *AdminService) GetAdminByID(id int32) (*domain.CommonAdminResponse, error) {
+	return s.AdminRepository.GetAdminByID(id)
+}
+
 func (s *AdminService) CreateAdmin(request *domain.CreateAdminRequest) (*domain.CommonAdminResponse, error) {
 	return s.AdminRepository.CreateAdmin(request)
 }

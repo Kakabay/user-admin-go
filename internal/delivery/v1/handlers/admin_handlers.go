@@ -3,7 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
+	"strconv"
 	"user-admin/internal/domain"
 	"user-admin/internal/service"
 	"user-admin/pkg/lib/status"
@@ -15,6 +17,25 @@ import (
 type AdminHandler struct {
 	AdminService *service.AdminService
 	Router       chi.Router
+}
+
+func (h *AdminHandler) GetAdminByID(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		utils.RespondWithErrorJSON(w, status.BadRequest, "Invalid ID")
+		return
+	}
+
+	admin, err := h.AdminService.GetAdminByID(int32(id))
+	if err != nil {
+		slog.Error("Error retrieving admin: ", utils.Err(err))
+		utils.RespondWithErrorJSON(w, status.InternalServerError, "Error retrieving admin")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(admin)
 }
 
 func (h *AdminHandler) CreateAdminHandler(w http.ResponseWriter, r *http.Request) {
