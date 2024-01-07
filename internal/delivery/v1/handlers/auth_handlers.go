@@ -38,7 +38,7 @@ func (h *AdminAuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) 
 	var loginRequest LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
 		slog.Error("Error decoding login request:", utils.Err(err))
-		Error(w, status.BadRequest, errors.InvalidRequestFormat)
+		utils.RespondWithErrorJSON(w, status.BadRequest, errors.InvalidRequestFormat)
 		return
 	}
 
@@ -46,10 +46,10 @@ func (h *AdminAuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		switch err {
 		case domain.ErrAdminNotFound:
-			Error(w, status.NotFound, errors.AdminNotFound)
+			utils.RespondWithErrorJSON(w, status.NotFound, errors.AdminNotFound)
 		default:
 			slog.Error("Error during login:", utils.Err(err))
-			Error(w, status.Unauthorized, errors.InvalidCredentials)
+			utils.RespondWithErrorJSON(w, status.Unauthorized, errors.InvalidCredentials)
 		}
 		return
 	}
@@ -58,23 +58,25 @@ func (h *AdminAuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) 
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}
-	respondJSON(w, status.OK, loginResponse)
+
+	utils.RespondWithJSON(w, status.OK, loginResponse)
 }
 func (h *AdminAuthHandler) RefreshTokensHandler(w http.ResponseWriter, r *http.Request) {
 	refreshToken := extractTokenFromHeader(r)
 	if refreshToken == "" {
-		Error(w, status.Unauthorized, errors.RefreshTokenNotProvided)
+		slog.Error("Refresh token is not provided")
+		utils.RespondWithErrorJSON(w, status.Unauthorized, errors.RefreshTokenNotProvided)
 		return
 	}
 
 	newAccessToken, newRefreshToken, err := h.AdminAuthService.RefreshTokens(refreshToken)
 	if err != nil {
 		slog.Error("Error refreshing tokens:", utils.Err(err))
-		Error(w, status.Unauthorized, errors.InvalidRefreshToken)
+		utils.RespondWithErrorJSON(w, status.Unauthorized, errors.InvalidRefreshToken)
 		return
 	}
 
-	respondJSON(w, status.OK, map[string]string{
+	utils.RespondWithJSON(w, status.OK, map[string]string{
 		"access_token":  newAccessToken,
 		"refresh_token": newRefreshToken,
 	})
@@ -88,18 +90,4 @@ func extractTokenFromHeader(r *http.Request) string {
 	}
 
 	return strings.TrimPrefix(bearerToken, "Bearer ")
-}
-
-func Error(w http.ResponseWriter, status int, message string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-
-	errResponse := ErrorResponse{Status: status, Message: message}
-	json.NewEncoder(w).Encode(errResponse)
-}
-
-func respondJSON(w http.ResponseWriter, status int, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
 }

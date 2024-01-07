@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"user-admin/internal/config"
-	utils "user-admin/pkg/lib/utils"
+	"user-admin/pkg/lib/utils"
 
 	"log/slog"
 
@@ -26,24 +26,24 @@ func AuthorizationMiddleware(cfg *config.Config, requiredRoles []string) func(ht
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			tokenString := extractTokenFromHeader(r)
 			if tokenString == "" {
-				utils.RespondWithError(w, http.StatusUnauthorized, "Authorization token not provided")
+				utils.RespondWithErrorJSON(w, http.StatusUnauthorized, "Authorization token not provided")
 				return
 			}
 
 			claims, err := validateToken(tokenString, cfg, isRefreshToken(r))
 			if err != nil {
-				utils.RespondWithError(w, http.StatusUnauthorized, fmt.Sprintf("Invalid authorization token: %v", err))
+				utils.RespondWithErrorJSON(w, http.StatusUnauthorized, fmt.Sprintf("Invalid authorization token: %v", err))
 				return
 			}
 
 			adminRole, ok := claims["role"].(string)
 			if !ok {
-				utils.RespondWithError(w, http.StatusUnauthorized, "Role not found in token claims")
+				utils.RespondWithErrorJSON(w, http.StatusUnauthorized, "Role not found in token claims")
 				return
 			}
 
 			if !hasRequiredRole(adminRole, requiredRoles) {
-				utils.RespondWithError(w, http.StatusForbidden, "Insufficient permissions")
+				utils.RespondWithErrorJSON(w, http.StatusForbidden, "Insufficient permissions")
 				return
 			}
 
