@@ -43,18 +43,26 @@ func IsValidPhoneNumber(phoneNumber string) bool {
 	return len(phoneNumber) == 12 && strings.HasPrefix(phoneNumber, validPrefix)
 }
 
-func RespondWithError(w http.ResponseWriter, code int, message string) {
-	w.WriteHeader(code)
-	w.Write([]byte(message))
-}
-
-func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
+// Alternative for http.Error to response with json instead of plain text
+func RespondWithErrorJSON(w http.ResponseWriter, code int, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	if err := json.NewEncoder(w).Encode(payload); err != nil {
-		slog.Error("Error encoding JSON: ", Err(err))
-		RespondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+
+	jsonError := struct {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+	}{
+		Code:    code,
+		Message: message,
 	}
+
+	json.NewEncoder(w).Encode(jsonError)
+}
+
+func RespondWithJSON(w http.ResponseWriter, status int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(data)
 }
 
 func ScanUserRow(rows *sql.Rows) (domain.CommonUserResponse, error) {
