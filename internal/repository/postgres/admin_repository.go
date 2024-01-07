@@ -23,6 +23,48 @@ func NewPostgresAdminRepository(db *sql.DB) *PostgresAdminRepository {
 // TODO: SEARCH ADMINS
 // TODO: UPDATE ADMINS
 
+func (r *PostgresAdminRepository) GetAllAdmins(page, pageSize int) (*domain.AdminsList, error) {
+	offset := (page - 1) * pageSize
+
+	query := `
+        SELECT id, username, role
+        FROM admins
+        ORDER BY id
+        LIMIT $1 OFFSET $2
+    `
+
+	stmt, err := r.DB.Prepare(query)
+	if err != nil {
+		slog.Error("Error preparing query: %v", utils.Err(err))
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.QueryContext(context.TODO(), pageSize, offset)
+	if err != nil {
+		slog.Error("Error executing query: %v", utils.Err(err))
+		return nil, err
+	}
+	defer rows.Close()
+
+	adminList := domain.AdminsList{Admins: make([]domain.CommonAdminResponse, 0)}
+	for rows.Next() {
+		var admin domain.CommonAdminResponse
+		if err := rows.Scan(&admin.ID, &admin.Username, &admin.Role); err != nil {
+			slog.Error("Error scanning admin row: %v", utils.Err(err))
+			return nil, err
+		}
+		adminList.Admins = append(adminList.Admins, admin)
+	}
+
+	if err := rows.Err(); err != nil {
+		slog.Error("Error iterating over admin rows: %v", utils.Err(err))
+		return nil, err
+	}
+
+	return &adminList, nil
+}
+
 func (r *PostgresAdminRepository) GetAdminByID(id int32) (*domain.CommonAdminResponse, error) {
 	stmt, err := r.DB.Prepare(`
 		SELECT id, username, role

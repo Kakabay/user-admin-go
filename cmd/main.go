@@ -47,6 +47,7 @@ func main() {
 		Router:       adminRouterWithoutAuth,
 	}
 
+	adminRouterWithoutAuth.Get("/", adminHandlerWithoutAuth.GetAllAdminsHandler)
 	adminRouterWithoutAuth.Get("/{id}", adminHandlerWithoutAuth.GetAdminByID)
 	adminRouterWithoutAuth.Post("/", adminHandlerWithoutAuth.CreateAdminHandler)
 	adminRouterWithoutAuth.Delete("/{id}", adminHandlerWithoutAuth.DeleteAdminHandler)

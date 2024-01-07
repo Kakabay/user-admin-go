@@ -21,6 +21,47 @@ type AdminHandler struct {
 	Router       chi.Router
 }
 
+func (h *AdminHandler) GetAllAdminsHandler(w http.ResponseWriter, r *http.Request) {
+	page, err := strconv.Atoi(r.URL.Query().Get("page"))
+	if err != nil || page <= 0 {
+		page = 1
+	}
+
+	pageSize, err := strconv.Atoi(r.URL.Query().Get("pageSize"))
+	if err != nil || pageSize <= 0 {
+		pageSize = 8 // Default page size
+	}
+
+	admins, err := h.AdminService.GetAllAdmins(page, pageSize)
+	if err != nil {
+		slog.Error("Error getting admins: ", utils.Err(err))
+		http.Error(w, errors.InternalServerError, status.InternalServerError)
+		return
+	}
+
+	// Calculate previous and next pages
+	previousPage := page - 1
+	if previousPage < 1 {
+		previousPage = 1
+	}
+
+	nextPage := page + 1
+
+	response := struct {
+		Admins      *domain.AdminsList `json:"admins"`
+		CurrentPage int                `json:"currentPage"`
+		PrevPage    int                `json:"previousPage"`
+		NextPage    int                `json:"nextPage"`
+	}{
+		Admins:      admins,
+		CurrentPage: page,
+		PrevPage:    previousPage,
+		NextPage:    nextPage,
+	}
+
+	utils.RespondWithJSON(w, status.OK, response)
+}
+
 func (h *AdminHandler) GetAdminByID(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)

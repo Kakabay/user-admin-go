@@ -6,7 +6,7 @@ import (
 )
 
 type AdminsList struct {
-	Admins []Admin `json:"admins"`
+	Admins []CommonAdminResponse `json:"admins"`
 }
 
 type Admin struct {
