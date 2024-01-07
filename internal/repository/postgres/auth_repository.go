@@ -122,21 +122,18 @@ func (r *PostgresAdminAuthRepository) generateRefreshToken(admin *domain.Admin) 
 }
 
 func (r *PostgresAdminAuthRepository) ValidateRefreshToken(refreshToken string) (map[string]interface{}, error) {
-	// Retrieve the claims from the token without validation
 	token, _, err := new(jwt.Parser).ParseUnverified(refreshToken, jwt.MapClaims{})
 	if err != nil {
 		slog.Error("Error parsing refresh token: %v", err)
 		return nil, fmt.Errorf("error parsing refresh token: %v", err)
 	}
 
-	// Extract the adminID claim from the token
 	adminIDClaim, ok := token.Claims.(jwt.MapClaims)["adminID"]
 	if !ok {
 		slog.Error("AdminID claim not found in refresh token")
 		return nil, fmt.Errorf("adminID claim not found in refresh token")
 	}
 
-	// Check if the refresh token exists in the database for the specified adminID
 	query := `
         SELECT 1
         FROM admins
@@ -155,7 +152,6 @@ func (r *PostgresAdminAuthRepository) ValidateRefreshToken(refreshToken string) 
 		return nil, fmt.Errorf("refresh token not found in the database")
 	}
 
-	// Now, proceed with the full validation of the refresh token
 	claims, err := r.validateRefreshToken(refreshToken)
 	if err != nil {
 		return nil, err
