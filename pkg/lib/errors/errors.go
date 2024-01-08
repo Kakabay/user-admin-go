@@ -21,4 +21,5 @@ const (
 	AuthorizationTokenNotProvided = "Authorization token not provided"
 	RoleNotFoundInTokenClaims     = "Role not found in token claims"
 	InsufficientPermission        = "Insufficient permissions"
+	TokenClaimsNotFound           = "Token claims not found"
 )
