@@ -1,3 +1,5 @@
+// main.go
+
 package main
 
 import (
@@ -11,7 +13,7 @@ import (
 	"user-admin/internal/delivery/v1/middleware"
 	repository "user-admin/internal/repository/postgres"
 	"user-admin/internal/service"
-	database "user-admin/pkg/database"
+	"user-admin/pkg/database"
 	utils "user-admin/pkg/lib/utils"
 	"user-admin/pkg/logger"
 
@@ -35,25 +37,32 @@ func main() {
 
 	mainRouter := chi.NewRouter()
 
-	adminRouterWithoutAuth := chi.NewRouter()
+	// Authentication and Token Validation middleware for both user and admin routes
+	tokenValidationMiddleware := middleware.TokenValidationMiddleware(cfg)
+
+	// Admin routes
+	adminRouter := chi.NewRouter()
+	adminRouter.Use(tokenValidationMiddleware)                                       // Apply token validation middleware to admin routes
+	adminRouter.Use(middleware.RoleAuthorizationMiddleware([]string{"super_admin"})) // Apply role authorization middleware for super admin
 	mainRouter.Route("/api/admin", func(r chi.Router) {
-		r.Mount("/", adminRouterWithoutAuth)
+		r.Mount("/", adminRouter)
 	})
 
-	adminRepositoryWithoutAuth := repository.NewPostgresAdminRepository(db.GetDB())
-	adminServiceWithoutAuth := service.NewAdminService(adminRepositoryWithoutAuth)
-	adminHandlerWithoutAuth := handlers.AdminHandler{
-		AdminService: adminServiceWithoutAuth,
-		Router:       adminRouterWithoutAuth,
+	adminRepository := repository.NewPostgresAdminRepository(db.GetDB())
+	adminService := service.NewAdminService(adminRepository)
+	adminHandler := handlers.AdminHandler{
+		AdminService: adminService,
+		Router:       adminRouter,
 	}
 
-	adminRouterWithoutAuth.Get("/", adminHandlerWithoutAuth.GetAllAdminsHandler)
-	adminRouterWithoutAuth.Get("/{id}", adminHandlerWithoutAuth.GetAdminByID)
-	adminRouterWithoutAuth.Post("/", adminHandlerWithoutAuth.CreateAdminHandler)
-	adminRouterWithoutAuth.Put("/{id}", adminHandlerWithoutAuth.UpdateAdminHandler)
-	adminRouterWithoutAuth.Delete("/{id}", adminHandlerWithoutAuth.DeleteAdminHandler)
-	adminRouterWithoutAuth.Get("/search", adminHandlerWithoutAuth.SearchAdminsHandler)
+	adminRouter.Get("/", adminHandler.GetAllAdminsHandler)
+	adminRouter.Get("/{id}", adminHandler.GetAdminByID)
+	adminRouter.Post("/", adminHandler.CreateAdminHandler)
+	adminRouter.Put("/{id}", adminHandler.UpdateAdminHandler)
+	adminRouter.Delete("/{id}", adminHandler.DeleteAdminHandler)
+	adminRouter.Get("/search", adminHandler.SearchAdminsHandler)
 
+	// Authentication routes
 	authRouter := chi.NewRouter()
 	mainRouter.Route("/auth", func(r chi.Router) {
 		r.Mount("/", authRouter)
@@ -69,8 +78,10 @@ func main() {
 	authRouter.Post("/login", authHandler.LoginHandler)
 	authRouter.Post("/refresh", authHandler.RefreshTokensHandler)
 
+	// User routes
 	userRouter := chi.NewRouter()
-	userRouter.Use(middleware.AuthorizationMiddleware(cfg, []string{"admin", "super_admin"}))
+	userRouter.Use(tokenValidationMiddleware)                                 // Apply token validation middleware to user routes
+	userRouter.Use(middleware.RoleAuthorizationMiddleware([]string{"admin"})) // Apply role authorization middleware for admin
 	mainRouter.Route("/api/user", func(r chi.Router) {
 		r.Mount("/", userRouter)
 	})

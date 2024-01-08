@@ -1,3 +1,5 @@
+// middleware/authorization.go
+
 package middleware
 
 import (
@@ -23,7 +25,8 @@ const (
 	tokenKey contextKey = "token"
 )
 
-func AuthorizationMiddleware(cfg *config.Config, requiredRoles []string) func(http.Handler) http.Handler {
+// TokenValidationMiddleware validates the JWT token.
+func TokenValidationMiddleware(cfg *config.Config) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			tokenString := extractTokenFromHeader(r)
@@ -38,20 +41,41 @@ func AuthorizationMiddleware(cfg *config.Config, requiredRoles []string) func(ht
 				return
 			}
 
+			ctx := r.Context()
+			ctx = context.WithValue(ctx, tokenKey, claims)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+// RoleAuthorizationMiddleware authorizes based on user roles.
+func RoleAuthorizationMiddleware(allowedRoles []string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			claims, ok := r.Context().Value(tokenKey).(jwt.MapClaims)
+			if !ok || claims == nil {
+				utils.RespondWithErrorJSON(w, status.Unauthorized, errors.TokenClaimsNotFound)
+				return
+			}
+
 			adminRole, ok := claims["role"].(string)
 			if !ok {
 				utils.RespondWithErrorJSON(w, status.Unauthorized, errors.RoleNotFoundInTokenClaims)
 				return
 			}
 
-			if !hasRequiredRole(adminRole, requiredRoles) {
+			// Super admins have all permissions, no need to check further
+			if hasRequiredRole(adminRole, []string{"super_admin"}) {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			if !hasRequiredRole(adminRole, allowedRoles) {
 				utils.RespondWithErrorJSON(w, status.Forbidden, errors.InsufficientPermission)
 				return
 			}
 
-			ctx := r.Context()
-			ctx = context.WithValue(ctx, tokenKey, claims)
-			next.ServeHTTP(w, r.WithContext(ctx))
+			next.ServeHTTP(w, r)
 		})
 	}
 }
@@ -108,9 +132,10 @@ func extractTokenFromHeader(r *http.Request) string {
 	return strings.TrimPrefix(bearerToken, "Bearer ")
 }
 
-func hasRequiredRole(adminRole string, requiredRoles []string) bool {
-	for _, requiredRole := range requiredRoles {
-		if adminRole == requiredRole {
+// hasRequiredRole checks if the admin has the required role.
+func hasRequiredRole(adminRole string, allowedRoles []string) bool {
+	for _, allowedRole := range allowedRoles {
+		if adminRole == allowedRole {
 			return true
 		}
 	}
