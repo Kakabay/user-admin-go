@@ -1,5 +1,3 @@
-// middleware/authorization.go
-
 package middleware
 
 import (
@@ -43,7 +41,6 @@ func AuthMiddleware(cfg *config.Config, allowedRoles []string) func(http.Handler
 			ctx := r.Context()
 			ctx = context.WithValue(ctx, tokenKey, claims)
 
-			// Super admins have all permissions, no need to check further
 			if hasRequiredRole(claims["role"].(string), []string{"super_admin"}) {
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
