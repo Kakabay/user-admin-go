@@ -37,7 +37,6 @@ func main() {
 
 	mainRouter := chi.NewRouter()
 
-	// Authentication and Token Validation middleware for both user and admin routes
 	authMiddlewareForAdmin := middleware.AuthMiddleware(cfg, []string{"admin"})
 	authMiddlewareForSuperAdmin := middleware.AuthMiddleware(cfg, []string{"super_admin"})
 
@@ -77,6 +76,7 @@ func main() {
 
 	authRouter.Post("/login", authHandler.LoginHandler)
 	authRouter.Post("/refresh", authHandler.RefreshTokensHandler)
+	authRouter.Post("/logout", authHandler.LogoutHandler)
 
 	// User routes
 	userRouter := chi.NewRouter()

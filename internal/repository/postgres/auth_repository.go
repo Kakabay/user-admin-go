@@ -207,3 +207,21 @@ func (r *PostgresAdminAuthRepository) GetAdminByID(adminID int) (*domain.Admin, 
 
 	return &admin, nil
 }
+
+func (r *PostgresAdminAuthRepository) DeleteRefreshToken(refreshToken string) error {
+	query := `
+        UPDATE admins
+        SET refresh_token = NULL,
+            refresh_token_created_at = NULL,
+            refresh_token_expiration_time = NULL
+        WHERE refresh_token = $1
+    `
+
+	_, err := r.DB.Exec(query, refreshToken)
+	if err != nil {
+		slog.Error("Error deleting refresh token: %v", utils.Err(err))
+		return err
+	}
+
+	return nil
+}

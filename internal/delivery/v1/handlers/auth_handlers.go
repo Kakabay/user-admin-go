@@ -82,6 +82,31 @@ func (h *AdminAuthHandler) RefreshTokensHandler(w http.ResponseWriter, r *http.R
 	})
 }
 
+func (h *AdminAuthHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	// Extract the refresh token from the request body
+	var requestData map[string]string
+	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
+		utils.RespondWithErrorJSON(w, status.BadRequest, errors.InvalidRequestFormat)
+		return
+	}
+
+	refreshToken := requestData["refresh_token"]
+	if refreshToken == "" {
+		utils.RespondWithErrorJSON(w, status.BadRequest, errors.RefreshTokenNotProvided)
+		return
+	}
+
+	// Call the LogoutAdmin function
+	err := h.AdminAuthService.LogoutAdmin(refreshToken)
+	if err != nil {
+		utils.RespondWithErrorJSON(w, status.InternalServerError, errors.InternalServerError)
+		return
+	}
+
+	// Respond with success
+	utils.RespondWithJSON(w, status.OK, nil)
+}
+
 func extractTokenFromHeader(r *http.Request) string {
 	bearerToken := r.Header.Get("Authorization")
 	if bearerToken == "" {

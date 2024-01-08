@@ -69,3 +69,13 @@ func (s *AdminAuthService) RefreshTokens(refreshToken string) (string, string, e
 
 	return newAccessToken, newRefreshToken, nil
 }
+
+func (s *AdminAuthService) LogoutAdmin(refreshToken string) error {
+	err := s.AdminAuthRepository.DeleteRefreshToken(refreshToken)
+	if err != nil {
+		slog.Error("Error deleting refresh token during logout:", utils.Err(err))
+		return err
+	}
+
+	return nil
+}
