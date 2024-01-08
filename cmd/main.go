@@ -38,12 +38,12 @@ func main() {
 	mainRouter := chi.NewRouter()
 
 	// Authentication and Token Validation middleware for both user and admin routes
-	tokenValidationMiddleware := middleware.TokenValidationMiddleware(cfg)
+	authMiddlewareForAdmin := middleware.AuthMiddleware(cfg, []string{"admin"})
+	authMiddlewareForSuperAdmin := middleware.AuthMiddleware(cfg, []string{"super_admin"})
 
 	// Admin routes
 	adminRouter := chi.NewRouter()
-	adminRouter.Use(tokenValidationMiddleware)                                       // Apply token validation middleware to admin routes
-	adminRouter.Use(middleware.RoleAuthorizationMiddleware([]string{"super_admin"})) // Apply role authorization middleware for super admin
+	adminRouter.Use(authMiddlewareForSuperAdmin) // Apply auth middleware to admin routes
 	mainRouter.Route("/api/admin", func(r chi.Router) {
 		r.Mount("/", adminRouter)
 	})
@@ -80,8 +80,7 @@ func main() {
 
 	// User routes
 	userRouter := chi.NewRouter()
-	userRouter.Use(tokenValidationMiddleware)                                 // Apply token validation middleware to user routes
-	userRouter.Use(middleware.RoleAuthorizationMiddleware([]string{"admin"})) // Apply role authorization middleware for admin
+	userRouter.Use(authMiddlewareForAdmin)
 	mainRouter.Route("/api/user", func(r chi.Router) {
 		r.Mount("/", userRouter)
 	})
