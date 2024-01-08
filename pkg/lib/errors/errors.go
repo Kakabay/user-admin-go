@@ -7,6 +7,7 @@ const (
 	InvalidCredentials      = "Invalid credentials"
 	RefreshTokenNotProvided = "Refresh token not provided"
 	InvalidRefreshToken     = "Invalid refresh token"
+	InvalidURLParameters    = "Invalid URL parameters"
 )
 
 // user
