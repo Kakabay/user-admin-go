@@ -32,6 +32,13 @@ func (h *AdminHandler) GetAllAdminsHandler(w http.ResponseWriter, r *http.Reques
 		pageSize = 8 // Default page size
 	}
 
+	if nextPageParam := r.URL.Query().Get("nextPage"); nextPageParam != "" {
+		nextPage, err := strconv.Atoi(nextPageParam)
+		if err == nil && nextPage > page {
+			page = nextPage
+		}
+	}
+
 	admins, err := h.AdminService.GetAllAdmins(page, pageSize)
 	if err != nil {
 		slog.Error("Error getting admins: ", utils.Err(err))

@@ -31,6 +31,13 @@ func (h *UserHandler) GetAllUsersHandler(w http.ResponseWriter, r *http.Request)
 		pageSize = 8 // Default page size
 	}
 
+	if nextPageParam := r.URL.Query().Get("nextPage"); nextPageParam != "" {
+		nextPage, err := strconv.Atoi(nextPageParam)
+		if err == nil && nextPage > page {
+			page = nextPage
+		}
+	}
+
 	users, err := h.UserService.GetAllUsers(page, pageSize)
 	if err != nil {
 		slog.Error("Error getting users: ", utils.Err(err))
