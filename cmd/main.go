@@ -9,8 +9,8 @@ import (
 	"os/signal"
 	"syscall"
 	"user-admin/internal/config"
-	handlers "user-admin/internal/delivery/v1/handlers"
 	"user-admin/internal/delivery/v1/middleware"
+	"user-admin/internal/delivery/v1/routers"
 	repository "user-admin/internal/repository/postgres"
 	"user-admin/internal/service"
 	"user-admin/pkg/database"
@@ -49,17 +49,7 @@ func main() {
 
 	adminRepository := repository.NewPostgresAdminRepository(db.GetDB())
 	adminService := service.NewAdminService(adminRepository)
-	adminHandler := handlers.AdminHandler{
-		AdminService: adminService,
-		Router:       adminRouter,
-	}
-
-	adminRouter.Get("/", adminHandler.GetAllAdminsHandler)
-	adminRouter.Get("/{id}", adminHandler.GetAdminByID)
-	adminRouter.Post("/", adminHandler.CreateAdminHandler)
-	adminRouter.Put("/{id}", adminHandler.UpdateAdminHandler)
-	adminRouter.Delete("/{id}", adminHandler.DeleteAdminHandler)
-	adminRouter.Get("/search", adminHandler.SearchAdminsHandler)
+	routers.SetupAdminRoutes(adminRouter, adminService)
 
 	// Authentication routes
 	authRouter := chi.NewRouter()
@@ -69,14 +59,7 @@ func main() {
 
 	adminAuthRepository := repository.NewPostgresAdminAuthRepository(db.GetDB(), cfg.JWT)
 	adminAuthService := service.NewAdminAuthService(adminAuthRepository)
-	authHandler := handlers.AdminAuthHandler{
-		AdminAuthService: *adminAuthService,
-		Router:           authRouter,
-	}
-
-	authRouter.Post("/login", authHandler.LoginHandler)
-	authRouter.Post("/refresh", authHandler.RefreshTokensHandler)
-	authRouter.Post("/logout", authHandler.LogoutHandler)
+	routers.SetupAuthRoutes(authRouter, adminAuthService)
 
 	// User routes
 	userRouter := chi.NewRouter()
@@ -87,20 +70,9 @@ func main() {
 
 	userRepository := repository.NewPostgresUserRepository(db.GetDB())
 	userService := service.NewUserService(userRepository)
-	userHandler := handlers.UserHandler{
-		UserService: userService,
-		Router:      userRouter,
-	}
+	routers.SetupUserRoutes(userRouter, userService) // Set up user routes
 
-	userRouter.Get("/", userHandler.GetAllUsersHandler)
-	userRouter.Get("/{id}", userHandler.GetUserByIDHandler)
-	userRouter.Post("/", userHandler.CreateUserHandler)
-	userRouter.Put("/{id}", userHandler.UpdateUserHandler)
-	userRouter.Delete("/{id}", userHandler.DeleteUserHandler)
-	userRouter.Post("/{id}/block", userHandler.BlockUserHandler)
-	userRouter.Post("/{id}/unblock", userHandler.UnblockUserHandler)
-	userRouter.Get("/search", userHandler.SearchUsersHandler)
-
+	// Handling graceful shutdown
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
