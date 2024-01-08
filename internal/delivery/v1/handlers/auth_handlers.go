@@ -61,6 +61,7 @@ func (h *AdminAuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) 
 
 	utils.RespondWithJSON(w, status.OK, loginResponse)
 }
+
 func (h *AdminAuthHandler) RefreshTokensHandler(w http.ResponseWriter, r *http.Request) {
 	refreshToken := extractTokenFromHeader(r)
 	if refreshToken == "" {
@@ -83,7 +84,6 @@ func (h *AdminAuthHandler) RefreshTokensHandler(w http.ResponseWriter, r *http.R
 }
 
 func (h *AdminAuthHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	// Extract the refresh token from the request body
 	var requestData map[string]string
 	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
 		utils.RespondWithErrorJSON(w, status.BadRequest, errors.InvalidRequestFormat)
@@ -103,8 +103,13 @@ func (h *AdminAuthHandler) LogoutHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	response := map[string]string{
+		"status":  "success",
+		"message": "Logout successful",
+	}
+
 	// Respond with success
-	utils.RespondWithJSON(w, status.OK, nil)
+	utils.RespondWithJSON(w, status.OK, response)
 }
 
 func extractTokenFromHeader(r *http.Request) string {
