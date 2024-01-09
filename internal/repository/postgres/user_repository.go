@@ -46,14 +46,42 @@ func (r *PostgresUserRepository) GetAllUsers(page, pageSize int) (*domain.UsersL
 	defer rows.Close()
 
 	var usersList domain.UsersList
+
+	var firstName, lastName, gender, location, email, profilePhotoURL sql.NullString
+	var dateOfBirth sql.NullTime
+
 	for rows.Next() {
 		var user domain.CommonUserResponse
-		if err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.PhoneNumber, &user.Blocked,
-			&user.RegistrationDate, &user.Gender, &user.DateOfBirth, &user.Location,
-			&user.Email, &user.ProfilePhotoURL); err != nil {
+		if err := rows.Scan(
+			&user.ID,
+			&firstName,
+			&lastName,
+			&user.PhoneNumber,
+			&user.Blocked,
+			&user.RegistrationDate,
+			&gender,
+			&dateOfBirth,
+			&location,
+			&email,
+			&profilePhotoURL,
+		); err != nil {
 			slog.Error("Error scanning user row: %v", utils.Err(err))
 			return nil, err
 		}
+
+		user.FirstName = utils.HandleNullString(firstName)
+		user.LastName = utils.HandleNullString(lastName)
+		user.Gender = utils.HandleNullString(gender)
+		user.Location = utils.HandleNullString(location)
+		user.Email = utils.HandleNullString(email)
+		user.ProfilePhotoURL = utils.HandleNullString(profilePhotoURL)
+
+		if dateOfBirth.Valid {
+			user.DateOfBirth.Year = int32(dateOfBirth.Time.Year())
+			user.DateOfBirth.Month = int32(dateOfBirth.Time.Month())
+			user.DateOfBirth.Day = int32(dateOfBirth.Time.Day())
+		}
+
 		usersList.Users = append(usersList.Users, user)
 	}
 
@@ -140,19 +168,24 @@ func (r *PostgresUserRepository) CreateUser(request *domain.CreateUserRequest) (
 	var firstName, lastName, gender, location, email, profilePhotoURL sql.NullString
 	var dateOfBirth sql.NullTime
 
-	dateOfBirthValue := time.Date(
-		int(request.DateOfBirth.Year),
-		time.Month(request.DateOfBirth.Month),
-		int(request.DateOfBirth.Day),
-		0, 0, 0, 0, time.UTC,
-	)
+	if request.DateOfBirth.Year != 0 || request.DateOfBirth.Month != 0 || request.DateOfBirth.Day != 0 {
+		dateOfBirth.Time = time.Date(
+			int(request.DateOfBirth.Year),
+			time.Month(request.DateOfBirth.Month),
+			int(request.DateOfBirth.Day),
+			0, 0, 0, 0, time.UTC,
+		)
+		dateOfBirth.Valid = true
+	} else {
+		dateOfBirth.Valid = false
+	}
 
 	err = stmt.QueryRow(
 		utils.NullIfEmptyStr(request.FirstName),
 		utils.NullIfEmptyStr(request.LastName),
 		request.PhoneNumber,
 		utils.NullIfEmptyStr(request.Gender),
-		dateOfBirthValue,
+		dateOfBirth,
 		utils.NullIfEmptyStr(request.Location),
 		utils.NullIfEmptyStr(request.Email),
 		utils.NullIfEmptyStr(request.ProfilePhotoURL),
