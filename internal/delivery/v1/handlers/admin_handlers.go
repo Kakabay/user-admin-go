@@ -168,8 +168,10 @@ func (h *AdminHandler) DeleteAdminHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	w.WriteHeader(status.OK)
-	w.Write([]byte("Admin deleted successfully"))
+	utils.RespondWithJSON(w, status.OK, StatusMessage{
+		Status:  status.OK,
+		Message: "Admin deleted successfully",
+	})
 }
 
 func (h *AdminHandler) SearchAdminsHandler(w http.ResponseWriter, r *http.Request) {
