@@ -29,8 +29,8 @@ type LoginResponse struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
-type ErrorResponse struct {
-	Status  int    `json:"status"`
+type StatusMessage struct {
+	Status  int    `json:"code"`
 	Message string `json:"message"`
 }
 
@@ -96,19 +96,17 @@ func (h *AdminAuthHandler) LogoutHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Call the LogoutAdmin function
 	err := h.AdminAuthService.LogoutAdmin(refreshToken)
 	if err != nil {
 		utils.RespondWithErrorJSON(w, status.InternalServerError, errors.InternalServerError)
 		return
 	}
 
-	response := map[string]string{
-		"status":  "success",
-		"message": "Logout successful",
+	response := StatusMessage{
+		Status:  status.OK,
+		Message: "Logout successful",
 	}
 
-	// Respond with success
 	utils.RespondWithJSON(w, status.OK, response)
 }
 
