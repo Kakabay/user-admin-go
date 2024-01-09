@@ -20,18 +20,6 @@ type UserHandler struct {
 	Router      *chi.Mux
 }
 
-// @Summary Get all users
-// @Description Get a paginated list of all users
-// @Tags users
-// @Accept json
-// @Produce json
-// @Param page query int false "Page number (default 1)"
-// @Param pageSize query int false "Page size (default 8)"
-// @Param nextPage query int false "Next page number (optional)"
-// @Success 200 {object} domain.GetAllUsersResponse "Successful response"
-// @Failure 500 {object} ErrorResponse "Internal Server Error"
-// @Router /users [get]
-
 func (h *UserHandler) GetAllUsersHandler(w http.ResponseWriter, r *http.Request) {
 	page, err := strconv.Atoi(r.URL.Query().Get("page"))
 	if err != nil || page <= 0 {
@@ -65,8 +53,13 @@ func (h *UserHandler) GetAllUsersHandler(w http.ResponseWriter, r *http.Request)
 
 	nextPage := page + 1
 
-	response := &domain.GetAllUsersResponse{
-		UsersList:   users.UsersList,
+	response := struct {
+		Admins      *domain.UsersList `json:"admins"`
+		CurrentPage int               `json:"currentPage"`
+		PrevPage    int               `json:"previousPage"`
+		NextPage    int               `json:"nextPage"`
+	}{
+		Admins:      users,
 		CurrentPage: page,
 		PrevPage:    previousPage,
 		NextPage:    nextPage,
@@ -74,17 +67,6 @@ func (h *UserHandler) GetAllUsersHandler(w http.ResponseWriter, r *http.Request)
 
 	utils.RespondWithJSON(w, status.OK, response)
 }
-
-// @Summary Get user by ID
-// @Description Get a user by their ID
-// @Tags users
-// @Accept json
-// @Produce json
-// @Param id path int true "User ID" format(int32)
-// @Success 200 {object} domain.GetUserResponse "Successful response"
-// @Failure 400 {object} ErrorResponse "Bad Request"
-// @Failure 500 {object} ErrorResponse "Internal Server Error"
-// @Router /users/{id} [get]
 
 func (h *UserHandler) GetUserByIDHandler(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")

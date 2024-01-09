@@ -20,7 +20,7 @@ func NewPostgresUserRepository(db *sql.DB) *PostgresUserRepository {
 	return &PostgresUserRepository{DB: db}
 }
 
-func (r *PostgresUserRepository) GetAllUsers(page, pageSize int) (*domain.GetAllUsersResponse, error) {
+func (r *PostgresUserRepository) GetAllUsers(page, pageSize int) (*domain.UsersList, error) {
 	offset := (page - 1) * pageSize
 
 	query := `
@@ -45,13 +45,16 @@ func (r *PostgresUserRepository) GetAllUsers(page, pageSize int) (*domain.GetAll
 	}
 	defer rows.Close()
 
-	userList := domain.UsersList{Users: make([]domain.CommonUserResponse, 0)}
+	var usersList domain.UsersList
 	for rows.Next() {
-		user, err := utils.ScanUserRow(rows)
-		if err != nil {
+		var user domain.CommonUserResponse
+		if err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.PhoneNumber, &user.Blocked,
+			&user.RegistrationDate, &user.Gender, &user.DateOfBirth, &user.Location,
+			&user.Email, &user.ProfilePhotoURL); err != nil {
+			slog.Error("Error scanning user row: %v", utils.Err(err))
 			return nil, err
 		}
-		userList.Users = append(userList.Users, user)
+		usersList.Users = append(usersList.Users, user)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -59,12 +62,7 @@ func (r *PostgresUserRepository) GetAllUsers(page, pageSize int) (*domain.GetAll
 		return nil, err
 	}
 
-	return &domain.GetAllUsersResponse{
-		UsersList:   userList,
-		CurrentPage: page,
-		PrevPage:    page - 1,
-		NextPage:    page + 1,
-	}, nil
+	return &usersList, nil
 }
 
 func (r *PostgresUserRepository) GetUserByID(id int32) (*domain.GetUserResponse, error) {
@@ -118,8 +116,6 @@ func (r *PostgresUserRepository) GetUserByID(id int32) (*domain.GetUserResponse,
 
 	return &user, nil
 }
-
-// TODO: HASH THE PASSWORDS!!!
 
 func (r *PostgresUserRepository) CreateUser(request *domain.CreateUserRequest) (*domain.CreateUserResponse, error) {
 	if !utils.IsValidPhoneNumber(request.PhoneNumber) {

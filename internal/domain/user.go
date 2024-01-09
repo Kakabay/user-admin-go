@@ -35,13 +35,6 @@ type CommonUserResponse struct {
 
 type GetUserResponse CommonUserResponse
 
-type GetAllUsersResponse struct {
-	UsersList   UsersList `json:"users"`
-	CurrentPage int       `json:"currentPage"`
-	PrevPage    int       `json:"previousPage"`
-	NextPage    int       `json:"nextPage"`
-}
-
 type CreateUserRequest struct {
 	FirstName       string `json:"first_name"`
 	LastName        string `json:"last_name"`
