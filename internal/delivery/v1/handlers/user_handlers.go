@@ -31,12 +31,14 @@ func (h *UserHandler) GetAllUsersHandler(w http.ResponseWriter, r *http.Request)
 		pageSize = 8 // Default page size
 	}
 
-	if nextPageParam := r.URL.Query().Get("nextPage"); nextPageParam != "" {
-		nextPage, err := strconv.Atoi(nextPageParam)
-		if err == nil && nextPage > page {
-			page = nextPage
-		}
+	var previousPage int
+	if page > 1 {
+		previousPage = page - 1
+	} else {
+		previousPage = 1
 	}
+
+	nextPage := page + 1
 
 	users, err := h.UserService.GetAllUsers(page, pageSize)
 	if err != nil {
@@ -45,21 +47,13 @@ func (h *UserHandler) GetAllUsersHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Calculate previous and next pages
-	previousPage := page - 1
-	if previousPage < 1 {
-		previousPage = 1
-	}
-
-	nextPage := page + 1
-
 	response := struct {
-		Admins      *domain.UsersList `json:"admins"`
+		Users       *domain.UsersList `json:"users"`
 		CurrentPage int               `json:"currentPage"`
 		PrevPage    int               `json:"previousPage"`
 		NextPage    int               `json:"nextPage"`
 	}{
-		Admins:      users,
+		Users:       users,
 		CurrentPage: page,
 		PrevPage:    previousPage,
 		NextPage:    nextPage,
