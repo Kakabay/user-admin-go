@@ -32,12 +32,14 @@ func (h *AdminHandler) GetAllAdminsHandler(w http.ResponseWriter, r *http.Reques
 		pageSize = 8 // Default page size
 	}
 
-	if nextPageParam := r.URL.Query().Get("nextPage"); nextPageParam != "" {
-		nextPage, err := strconv.Atoi(nextPageParam)
-		if err == nil && nextPage > page {
-			page = nextPage
-		}
+	var previousPage int
+	if page > 1 {
+		previousPage = page - 1
+	} else {
+		previousPage = 1
 	}
+
+	nextPage := page + 1
 
 	admins, err := h.AdminService.GetAllAdmins(page, pageSize)
 	if err != nil {
@@ -45,14 +47,6 @@ func (h *AdminHandler) GetAllAdminsHandler(w http.ResponseWriter, r *http.Reques
 		http.Error(w, errors.InternalServerError, status.InternalServerError)
 		return
 	}
-
-	// Calculate previous and next pages
-	previousPage := page - 1
-	if previousPage < 1 {
-		previousPage = 1
-	}
-
-	nextPage := page + 1
 
 	response := struct {
 		Admins      *domain.AdminsList `json:"admins"`
