@@ -44,15 +44,15 @@ func IsValidPhoneNumber(phoneNumber string) bool {
 }
 
 // Alternative for http.Error to response with json instead of plain text
-func RespondWithErrorJSON(w http.ResponseWriter, code int, message string) {
+func RespondWithErrorJSON(w http.ResponseWriter, status int, message string) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
+	w.WriteHeader(status)
 
 	jsonError := struct {
-		Code    int    `json:"code"`
+		Status  int    `json:"status"`
 		Message string `json:"message"`
 	}{
-		Code:    code,
+		Status:  status,
 		Message: message,
 	}
 
