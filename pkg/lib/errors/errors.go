@@ -10,11 +10,13 @@ const (
 	InvalidURLParameters    = "Invalid URL parameters"
 )
 
-// user
+// user & admin
 const (
-	InternalServerError = "Internal server error"
-	InvalidID           = "Invalid ID"
-	InvalidRequestBody  = "Invalid request body"
+	InternalServerError      = "Internal server error"
+	InvalidID                = "Invalid ID"
+	InvalidRequestBody       = "Invalid request body"
+	InvalidPhoneNumberFormat = "Invalid phone number format"
+	SearchQueryRequired      = "Search query is required"
 )
 
 // middleware
