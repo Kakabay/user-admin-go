@@ -14,6 +14,10 @@ type UserID struct {
 	ID int32 `json:"id"`
 }
 
+type UsersList struct {
+	Users []CommonUserResponse `json:"users"`
+}
+
 // CommonUserResponse captures the common properties for GetUserResponse, CreateUserResponse and UpdateUserResponse
 type CommonUserResponse struct {
 	ID               int32     `json:"id"`
@@ -29,12 +33,14 @@ type CommonUserResponse struct {
 	ProfilePhotoURL  string    `json:"profile_photo_url"`
 }
 
-// ADD PAGINATION(!)
-type UsersList struct {
-	Users []CommonUserResponse `json:"users"`
-}
-
 type GetUserResponse CommonUserResponse
+
+type GetAllUsersResponse struct {
+	UsersList   UsersList `json:"users"`
+	CurrentPage int       `json:"currentPage"`
+	PrevPage    int       `json:"previousPage"`
+	NextPage    int       `json:"nextPage"`
+}
 
 type CreateUserRequest struct {
 	FirstName       string `json:"first_name"`
