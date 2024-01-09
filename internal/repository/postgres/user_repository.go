@@ -20,7 +20,7 @@ func NewPostgresUserRepository(db *sql.DB) *PostgresUserRepository {
 	return &PostgresUserRepository{DB: db}
 }
 
-func (r *PostgresUserRepository) GetAllUsers(page, pageSize int) (*domain.UsersList, error) {
+func (r *PostgresUserRepository) GetAllUsers(page, pageSize int) (*domain.GetAllUsersResponse, error) {
 	offset := (page - 1) * pageSize
 
 	query := `
@@ -59,7 +59,12 @@ func (r *PostgresUserRepository) GetAllUsers(page, pageSize int) (*domain.UsersL
 		return nil, err
 	}
 
-	return &userList, nil
+	return &domain.GetAllUsersResponse{
+		UsersList:   userList,
+		CurrentPage: page,
+		PrevPage:    page - 1,
+		NextPage:    page + 1,
+	}, nil
 }
 
 func (r *PostgresUserRepository) GetUserByID(id int32) (*domain.GetUserResponse, error) {

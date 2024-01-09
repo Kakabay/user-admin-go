@@ -20,6 +20,18 @@ type UserHandler struct {
 	Router      *chi.Mux
 }
 
+// @Summary Get all users
+// @Description Get a paginated list of all users
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number (default 1)"
+// @Param pageSize query int false "Page size (default 8)"
+// @Param nextPage query int false "Next page number (optional)"
+// @Success 200 {object} domain.GetAllUsersResponse "Successful response"
+// @Failure 500 {object} ErrorResponse "Internal Server Error"
+// @Router /users [get]
+
 func (h *UserHandler) GetAllUsersHandler(w http.ResponseWriter, r *http.Request) {
 	page, err := strconv.Atoi(r.URL.Query().Get("page"))
 	if err != nil || page <= 0 {
@@ -53,13 +65,8 @@ func (h *UserHandler) GetAllUsersHandler(w http.ResponseWriter, r *http.Request)
 
 	nextPage := page + 1
 
-	response := struct {
-		Users       *domain.UsersList `json:"users"`
-		CurrentPage int               `json:"currentPage"`
-		PrevPage    int               `json:"previousPage"`
-		NextPage    int               `json:"nextPage"`
-	}{
-		Users:       users,
+	response := &domain.GetAllUsersResponse{
+		UsersList:   users.UsersList,
 		CurrentPage: page,
 		PrevPage:    previousPage,
 		NextPage:    nextPage,
@@ -68,11 +75,22 @@ func (h *UserHandler) GetAllUsersHandler(w http.ResponseWriter, r *http.Request)
 	utils.RespondWithJSON(w, status.OK, response)
 }
 
+// @Summary Get user by ID
+// @Description Get a user by their ID
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path int true "User ID" format(int32)
+// @Success 200 {object} domain.GetUserResponse "Successful response"
+// @Failure 400 {object} ErrorResponse "Bad Request"
+// @Failure 500 {object} ErrorResponse "Internal Server Error"
+// @Router /users/{id} [get]
+
 func (h *UserHandler) GetUserByIDHandler(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		utils.RespondWithErrorJSON(w, status.BadRequest, "Invalid ID")
+		utils.RespondWithErrorJSON(w, status.BadRequest, errors.InvalidID)
 		return
 	}
 
@@ -91,12 +109,12 @@ func (h *UserHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request) 
 	var createUserRequest domain.CreateUserRequest
 	err := json.NewDecoder(r.Body).Decode(&createUserRequest)
 	if err != nil {
-		utils.RespondWithErrorJSON(w, status.BadRequest, "Invalid request body")
+		utils.RespondWithErrorJSON(w, status.BadRequest, errors.InvalidRequestBody)
 		return
 	}
 
 	if !utils.IsValidPhoneNumber(createUserRequest.PhoneNumber) {
-		utils.RespondWithErrorJSON(w, status.BadRequest, "Invalid phone number format")
+		utils.RespondWithErrorJSON(w, status.BadRequest, errors.InvalidPhoneNumberFormat)
 		return
 	}
 
@@ -157,8 +175,10 @@ func (h *UserHandler) DeleteUserHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	w.WriteHeader(status.OK)
-	w.Write([]byte("User deleted successfully"))
+	utils.RespondWithJSON(w, status.OK, StatusMessage{
+		Status:  status.OK,
+		Message: "User deleted successfully",
+	})
 }
 
 func (h *UserHandler) BlockUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -176,8 +196,10 @@ func (h *UserHandler) BlockUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(status.OK)
-	w.Write([]byte("User blocked successfully"))
+	utils.RespondWithJSON(w, status.OK, StatusMessage{
+		Status:  status.OK,
+		Message: "User blocked successfully",
+	})
 }
 
 func (h *UserHandler) UnblockUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -195,14 +217,16 @@ func (h *UserHandler) UnblockUserHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	w.WriteHeader(status.OK)
-	w.Write([]byte("User unblocked successfully"))
+	utils.RespondWithJSON(w, status.OK, StatusMessage{
+		Status:  status.OK,
+		Message: "User unblocked successfully",
+	})
 }
 
 func (h *UserHandler) SearchUsersHandler(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("query")
 	if query == "" {
-		utils.RespondWithErrorJSON(w, status.BadRequest, "Search query is required")
+		utils.RespondWithErrorJSON(w, status.BadRequest, errors.SearchQueryRequired)
 		return
 	}
 
